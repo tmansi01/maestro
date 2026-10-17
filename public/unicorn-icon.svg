@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="50%" stop-color="#d946ef" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+    <linearGradient id="hornGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bgGrad)" />
+  <!-- Sparkles -->
+  <circle cx="48" cy="56" r="6" fill="#fef08a" />
+  <circle cx="208" cy="64" r="8" fill="#fef08a" />
+  <circle cx="52" cy="196" r="5" fill="#bae6fd" />
+  <!-- Rainbow Mane -->
+  <path d="M72 95 C45 105, 45 145, 75 155" stroke="#f43f5e" stroke-width="18" stroke-linecap="round" fill="none" />
+  <path d="M76 115 C50 125, 50 165, 82 175" stroke="#eab308" stroke-width="16" stroke-linecap="round" fill="none" />
+  <path d="M84 135 C60 145, 60 185, 92 190" stroke="#38bdf8" stroke-width="16" stroke-linecap="round" fill="none" />
+  <!-- Unicorn Head -->
+  <ellipse cx="132" cy="138" rx="52" ry="46" fill="#ffffff" />
+  <ellipse cx="162" cy="150" rx="34" ry="28" fill="#fce7f3" />
+  <!-- Ear -->
+  <path d="M98 102 L86 68 L118 90 Z" fill="#ffffff" />
+  <path d="M99 98 L91 75 L112 90 Z" fill="#f472b6" />
+  <!-- Magic Horn -->
+  <polygon points="134,94 166,34 156,102" fill="url(#hornGrad)" />
+  <!-- Cute Eye -->
+  <circle cx="144" cy="128" r="9" fill="#1e1b4b" />
+  <circle cx="147" cy="125" r="3.5" fill="#ffffff" />
+  <!-- Rosy Cheek -->
+  <ellipse cx="138" cy="146" rx="10" ry="6" fill="#fb7185" opacity="0.6" />
+  <!-- Smile -->
+  <path d="M154 156 Q166 168 178 154" stroke="#1e1b4b" stroke-width="5" stroke-linecap="round" fill="none" />
+  <!-- Musical Note Badge -->
+  <circle cx="198" cy="196" r="30" fill="#fef08a" />
+  <text x="198" y="210" font-family="sans-serif" font-size="38" font-weight="bold" text-anchor="middle" fill="#7c3aed">♪</text>
+</svg>
