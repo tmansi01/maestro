@@ -20,6 +20,7 @@ interface ParentSettingsModalProps {
     >
   ) => void;
   onUnlockAllWorlds: () => void;
+  onResetArcadeLeaderboard: () => void;
   onResetProgress: () => void;
   getSyncCode: () => string;
   onApplySyncCode: (code: string) => boolean;
@@ -30,6 +31,7 @@ export const ParentSettingsModal: React.FC<ParentSettingsModalProps> = ({
   playerState,
   onUpdateSettings,
   onUnlockAllWorlds,
+  onResetArcadeLeaderboard,
   onResetProgress,
   getSyncCode,
   onApplySyncCode,
@@ -266,14 +268,23 @@ export const ParentSettingsModal: React.FC<ParentSettingsModalProps> = ({
               </p>
             </div>
 
-            <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={onResetProgress}
-                className="text-xs font-bold text-rose-600 hover:underline cursor-pointer"
-              >
-                Reset All Player Progress
-              </button>
+            <div className="flex flex-wrap justify-between items-center gap-3 pt-2 border-t border-slate-200">
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  type="button"
+                  onClick={onResetArcadeLeaderboard}
+                  className="text-xs font-bold text-amber-700 hover:underline cursor-pointer"
+                >
+                  Reset Arcade Leaderboard
+                </button>
+                <button
+                  type="button"
+                  onClick={onResetProgress}
+                  className="text-xs font-bold text-rose-600 hover:underline cursor-pointer"
+                >
+                  Reset All Player Progress
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={onClose}

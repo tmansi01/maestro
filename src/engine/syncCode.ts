@@ -1,4 +1,10 @@
-import { ColorMode, NamingConvention } from '../data/notes';
+import { ClefType, ColorMode, NamingConvention } from '../data/notes';
+import {
+  ArcadeGameMode,
+  ArcadeLeaderboardEntry,
+  DEFAULT_RIVAL_LEADERBOARD,
+  insertLeaderboardEntry,
+} from '../data/arcade';
 
 export interface SyncableProgress {
   unlockedWorld: number; // 1..8
@@ -6,14 +12,51 @@ export interface SyncableProgress {
   worldStars: Record<number, { piano: number; bubbles: number; mic: number; bossCleared: boolean; lessonDone: boolean }>;
   namingConvention: NamingConvention;
   colorMode: ColorMode;
+  arcadeLeaderboard?: ArcadeLeaderboardEntry[];
+}
+
+function toUtf8Base64Url(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function fromUtf8Base64Url(b64Url: string): string {
+  const raw = b64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = raw + '='.repeat((4 - (raw.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
 }
 
 /**
- * Encodes player progress into a compact, kid-and-parent-friendly Magic Unicorn Code
- * so she can transfer her progress between her Amazon Fire Tablet, Google Chromebook, and MacBook!
+ * Encodes player progress (including custom Arcade Hall of Fame scores) into a compact Magic Unicorn Code
+ * so she can transfer progress between her Amazon Fire Tablet, Google Chromebook, and MacBook!
  */
 export function encodeSyncCode(state: SyncableProgress): string {
-  const payload = {
+  const customEntries = (state.arcadeLeaderboard || [])
+    .filter((e) => !e.isRival)
+    .slice(0, 8)
+    .map((e) => [
+      e.playerName.slice(0, 14),
+      e.avatar,
+      e.score,
+      e.notesCorrect,
+      e.maxLevel,
+      e.mode === 'bubbles' ? 1 : e.mode === 'mic' ? 2 : 0,
+      e.clef === 'bass' ? 1 : e.clef === 'grand' ? 2 : 0,
+    ]);
+
+  const payload: Record<string, unknown> = {
     u: state.unlockedWorld,
     p: state.points,
     n: state.namingConvention === 'solfege' ? 1 : state.namingConvention === 'both' ? 2 : 0,
@@ -28,21 +71,19 @@ export function encodeSyncCode(state: SyncableProgress): string {
     ]),
   };
 
+  if (customEntries.length > 0) {
+    payload.lb = customEntries;
+  }
+
   const json = JSON.stringify(payload);
-  const base64 = btoa(json)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-  return `UNI-${base64}`;
+  return `UNI-${toUtf8Base64Url(json)}`;
 }
 
 export function decodeSyncCode(code: string): SyncableProgress | null {
   try {
     const trimmed = code.trim();
     if (!trimmed.startsWith('UNI-')) return null;
-    const raw = trimmed.slice(4).replace(/-/g, '+').replace(/_/g, '/');
-    const padded = raw + '='.repeat((4 - (raw.length % 4)) % 4);
-    const json = atob(padded);
+    const json = fromUtf8Base64Url(trimmed.slice(4));
     const parsed = JSON.parse(json);
 
     if (typeof parsed.u !== 'number' || typeof parsed.p !== 'number' || !Array.isArray(parsed.s)) {
@@ -74,12 +115,39 @@ export function decodeSyncCode(code: string): SyncableProgress | null {
     const colorMode: ColorMode =
       parsed.c === 1 ? 'always' : parsed.c === 2 ? 'off' : 'progressive';
 
+    let arcadeLeaderboard: ArcadeLeaderboardEntry[] | undefined;
+    if (Array.isArray(parsed.lb)) {
+      let board = [...DEFAULT_RIVAL_LEADERBOARD];
+      parsed.lb.forEach((item: unknown, idx: number) => {
+        if (Array.isArray(item) && item.length >= 7) {
+          const mode: ArcadeGameMode =
+            item[5] === 1 ? 'bubbles' : item[5] === 2 ? 'mic' : 'piano';
+          const clef: ClefType =
+            item[6] === 1 ? 'bass' : item[6] === 2 ? 'grand' : 'treble';
+          board = insertLeaderboardEntry(board, {
+            id: `sync-${Date.now()}-${idx}`,
+            playerName: String(item[0] || 'Maestro'),
+            avatar: String(item[1] || '🦄'),
+            score: Math.max(0, Number(item[2]) || 0),
+            notesCorrect: Math.max(0, Number(item[3]) || 0),
+            maxLevel: Math.max(1, Number(item[4]) || 1),
+            mode,
+            clef,
+            isRival: false,
+            createdAt: Date.now() + idx,
+          });
+        }
+      });
+      arcadeLeaderboard = board;
+    }
+
     return {
       unlockedWorld: Math.min(8, Math.max(1, parsed.u)),
       points: Math.max(0, parsed.p),
       worldStars,
       namingConvention,
       colorMode,
+      arcadeLeaderboard,
     };
   } catch {
     return null;

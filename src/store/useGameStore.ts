@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ClefType, ColorMode, NamingConvention, NoteId } from '../data/notes';
 import { WORLDS } from '../data/curriculum';
+import {
+  ArcadeLeaderboardEntry,
+  DEFAULT_RIVAL_LEADERBOARD,
+  insertLeaderboardEntry,
+} from '../data/arcade';
 import { decodeSyncCode, encodeSyncCode } from '../engine/syncCode';
 
 export type GameMode = 'piano' | 'bubbles' | 'mic';
@@ -34,6 +39,9 @@ export interface PlayerState {
   voiceEnabled: boolean;
   micSensitivity: number; // RMS threshold (default 0.018)
   trickyNotesCount: Partial<Record<NoteId, number>>;
+  arcadeLeaderboard: ArcadeLeaderboardEntry[];
+  lastArcadePlayerName: string;
+  lastArcadeAvatar: string;
 }
 
 const STORAGE_KEY = 'maestro_unicorn_save_v1';
@@ -64,11 +72,14 @@ export function createInitialPlayerState(): PlayerState {
     voiceEnabled: true,
     micSensitivity: 0.018,
     trickyNotesCount: {},
+    arcadeLeaderboard: [...DEFAULT_RIVAL_LEADERBOARD],
+    lastArcadePlayerName: '',
+    lastArcadeAvatar: '🦄',
   };
 }
 
 /**
- * Generates a dynamic, balanced 10-note queue for a game session.
+ * Generates a dynamic, balanced note queue for a game session.
  * Weights slightly toward notes she previously missed (`trickyNotesCount`)
  * and prevents more than 2 identical notes in a row.
  */
@@ -90,7 +101,7 @@ export function generateDynamicNoteQueue(
   }
 
   const queue: NoteId[] = [];
-  // Ensure every note in the world's pool appears at least once first
+  // Ensure every note in the pool appears at least once first
   const shuffledBase = [...notePool].sort(() => Math.random() - 0.5);
   for (const n of shuffledBase) {
     if (queue.length < length) {
@@ -163,6 +174,10 @@ export function useGameStore() {
           ...init,
           ...parsed,
           worldStars: { ...init.worldStars, ...(parsed.worldStars || {}) },
+          arcadeLeaderboard:
+            Array.isArray(parsed.arcadeLeaderboard) && parsed.arcadeLeaderboard.length > 0
+              ? parsed.arcadeLeaderboard
+              : init.arcadeLeaderboard,
         };
       }
     } catch {
@@ -277,6 +292,58 @@ export function useGameStore() {
     });
   }, []);
 
+  /**
+   * Credits Boutique Sparkles & updates tricky note weights at the end of an Arcade Run,
+   * and optionally saves a new entry into the Top 10 Hall of Fame Leaderboard!
+   */
+  const recordArcadeRun = useCallback(
+    (params: {
+      sparklesEarned: number;
+      missedNotes: NoteId[];
+      leaderboardEntry?: Omit<ArcadeLeaderboardEntry, 'id' | 'createdAt'>;
+    }) => {
+      setState((prev) => {
+        const updatedTricky = { ...prev.trickyNotesCount };
+        for (const n of params.missedNotes) {
+          updatedTricky[n] = (updatedTricky[n] || 0) + 1;
+        }
+
+        let nextLeaderboard = prev.arcadeLeaderboard;
+        let nextName = prev.lastArcadePlayerName;
+        let nextAvatar = prev.lastArcadeAvatar;
+
+        if (params.leaderboardEntry) {
+          const cleanName = params.leaderboardEntry.playerName.trim() || 'Super Pianist';
+          nextName = cleanName;
+          nextAvatar = params.leaderboardEntry.avatar;
+          nextLeaderboard = insertLeaderboardEntry(prev.arcadeLeaderboard, {
+            ...params.leaderboardEntry,
+            playerName: cleanName,
+            id: `player-${Date.now()}`,
+            createdAt: Date.now(),
+          });
+        }
+
+        return {
+          ...prev,
+          points: prev.points + Math.max(0, params.sparklesEarned),
+          trickyNotesCount: updatedTricky,
+          arcadeLeaderboard: nextLeaderboard,
+          lastArcadePlayerName: nextName,
+          lastArcadeAvatar: nextAvatar,
+        };
+      });
+    },
+    []
+  );
+
+  const resetArcadeLeaderboard = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      arcadeLeaderboard: [...DEFAULT_RIVAL_LEADERBOARD],
+    }));
+  }, []);
+
   const buyOrEquipAccessory = useCallback(
     (accessoryId: string, category: 'hat' | 'glasses' | 'neck' | 'wings', cost: number) => {
       setState((prev) => {
@@ -351,6 +418,7 @@ export function useGameStore() {
       worldStars: state.worldStars,
       namingConvention: state.namingConvention,
       colorMode: state.colorMode,
+      arcadeLeaderboard: state.arcadeLeaderboard,
     });
   }, [state]);
 
@@ -374,6 +442,7 @@ export function useGameStore() {
         worldStars: mergedStars,
         namingConvention: decoded.namingConvention,
         colorMode: decoded.colorMode,
+        arcadeLeaderboard: decoded.arcadeLeaderboard || prev.arcadeLeaderboard,
       };
     });
     return true;
@@ -384,6 +453,8 @@ export function useGameStore() {
     completeLesson,
     recordGameResult,
     completeBossConcert,
+    recordArcadeRun,
+    resetArcadeLeaderboard,
     buyOrEquipAccessory,
     buySticker,
     updateSettings,

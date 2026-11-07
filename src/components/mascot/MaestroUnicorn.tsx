@@ -66,6 +66,26 @@ export const MaestroUnicorn: React.FC<MaestroUnicornProps> = ({
               <ellipse cx="134" cy="78" rx="18" ry="26" transform="rotate(25 134 78)" fill="#38bdf8" opacity="0.85" stroke="#fff" strokeWidth="2" />
             </g>
           )}
+          {equipped.wings === 'wings-galaxy' && (
+            <g>
+              <path
+                d="M26 102 C2 78, 4 40, 38 56 C24 68, 22 86, 38 100 Z"
+                fill="#312e81"
+                stroke="#f0abfc"
+                strokeWidth="2.5"
+              />
+              <circle cx="20" cy="68" r="2.5" fill="#fef08a" />
+              <circle cx="25" cy="82" r="2" fill="#38bdf8" />
+              <path
+                d="M134 102 C158 78, 156 40, 122 56 C136 68, 138 86, 122 100 Z"
+                fill="#312e81"
+                stroke="#f0abfc"
+                strokeWidth="2.5"
+              />
+              <circle cx="140" cy="68" r="2.5" fill="#fef08a" />
+              <circle cx="135" cy="82" r="2" fill="#38bdf8" />
+            </g>
+          )}
 
           {/* Rainbow Mane */}
           <path d="M44 64 C24 72, 24 98, 46 106" stroke="#f43f5e" strokeWidth="12" strokeLinecap="round" fill="none" />
@@ -110,6 +130,17 @@ export const MaestroUnicorn: React.FC<MaestroUnicornProps> = ({
               <polygon points="58,56 80,14 98,56" fill="#4f46e5" stroke="#fde047" strokeWidth="1.5" />
             </g>
           )}
+          {equipped.hat === 'hat-lightning' && (
+            <g>
+              <polygon
+                points="58,56 64,28 76,44 84,22 94,44 104,28 106,56"
+                fill="#facc15"
+                stroke="#ea580c"
+                strokeWidth="2"
+              />
+              <polygon points="82,30 77,43 84,43 80,54 91,39 84,39" fill="#ffffff" />
+            </g>
+          )}
 
           {/* Expressive Eyes */}
           {mood === 'excited' ? (
@@ -127,6 +158,12 @@ export const MaestroUnicorn: React.FC<MaestroUnicornProps> = ({
           )}
           {equipped.glasses === 'glasses-rainbow' && (
             <rect x="78" y="76" width="24" height="14" rx="5" fill="#38bdf8" opacity="0.75" stroke="#1e1b4b" strokeWidth="2" />
+          )}
+          {equipped.glasses === 'glasses-arcade' && (
+            <g>
+              <rect x="74" y="76" width="34" height="13" rx="3" fill="#06b6d4" opacity="0.85" stroke="#f43f5e" strokeWidth="2.5" />
+              <line x1="78" y1="80" x2="104" y2="80" stroke="#fef08a" strokeWidth="2" />
+            </g>
           )}
 
           {/* Rosy Cheek & Smile */}
@@ -155,14 +192,30 @@ export const MaestroUnicorn: React.FC<MaestroUnicornProps> = ({
               </text>
             </g>
           )}
+          {equipped.neck === 'neck-champion' && (
+            <g transform="translate(58, 118)">
+              <path d="M2 4 Q22 18 42 4 L46 18 Q22 28 0 18 Z" fill="#f59e0b" stroke="#fef08a" strokeWidth="2" />
+              <circle cx="22" cy="15" r="5" fill="#ef4444" stroke="#ffffff" strokeWidth="1.5" />
+            </g>
+          )}
         </svg>
       </div>
 
-      {/* Speech Bubble with Replay Voice Button */}
+      {/* Speech Bubble with Replay Voice Button (locked height in compact gameplay mode to prevent layout shift) */}
       {speechBubble && (
-        <div className="relative flex-1 bg-white/95 border-3 border-purple-300 rounded-2xl p-3 sm:p-4 shadow-md">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-slate-800 font-semibold text-sm sm:text-base leading-snug">
+        <div
+          className={`relative flex-1 bg-white/95 border-3 border-purple-300 rounded-2xl shadow-md ${
+            compact
+              ? 'h-20 px-3.5 py-1.5 flex items-center overflow-hidden'
+              : 'p-3 sm:p-4'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2 w-full">
+            <p
+              className={`text-slate-800 font-semibold leading-snug ${
+                compact ? 'text-xs sm:text-sm line-clamp-3' : 'text-sm sm:text-base'
+              }`}
+            >
               {speechBubble}
             </p>
             {onReplaySpeech && (

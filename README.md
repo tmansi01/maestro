@@ -16,6 +16,12 @@ An interactive, progressive note-reading game for a 7-year-old learning piano ac
 - **Sequential Unlocking + Unlimited Replay of Unlocked Worlds**:
   - World 1 starts unlocked; Worlds 2–8 unlock sequentially as she clears each World's Boss Melody Concert.
   - Once unlocked, every World (its Story Lesson, all 3 Game Modes, and Boss Melody Concert) can be replayed infinitely with dynamically generated note queues to reinforce learning.
+- **🕹️ Endless Arcade Mode & Hall of Fame Leaderboard**:
+  - **Custom Setup**: Pick Treble, Bass, or Grand Staff, toggle any combination of notes (`C3–C5`), and choose any of the 3 input modes.
+  - **3 Hearts + Progressive Beat Timer**: Starts at `12.0s` per note at Level 1 and levels up every 6 notes (`-1.0s` per level down to a `3.5s` floor), using classic black-and-white sheet music for genuine sight-reading reinforcement.
+  - **2-Second "Pause & Learn" Flash**: Losing a heart on a mistake or timeout briefly pauses the timer to reveal the Landmark Stepping-Stone Hint + play the true note (and re-queues it 3 turns ahead!).
+  - **Mystery Golden Notes (`✨`)**: Randomly drop **❤️ Extra Hearts** (up to 5 max), **❄️ Ice Freeze**, **🌈 2x Rainbow Fever**, **🛡️ Unicorn Shields**, and **🎁 Boutique Sparkle Chests**!
+  - **Family & Rival Hall of Fame**: Pre-seeded with 5 Unicorn Rivals, lets family/friends save their name & emoji avatar to the Top 10 Leaderboard, and syncs via `UNI-...` Magic Codes!
 - **3 Selectable Game Modes**:
   1. **🎹 Mode 1: Magic Piano** (Interactive 2-octave keyboard `C3–C5` + physical keyboard shortcuts `C D E F G A B` on MacBook/Chromebook)
   2. **🏷️ Mode 2: Rainbow Bubbles** (Large touch buttons for rapid note-naming)

@@ -91,6 +91,38 @@ export const UNICORN_ACCESSORIES: UnicornAccessory[] = [
     costPoints: 500,
     description: 'Glowing rainbow fairy wings for Grand Staff Champions!',
   },
+  {
+    id: 'hat-lightning',
+    name: 'Lightning Arcade Crown',
+    category: 'hat',
+    emoji: '⚡',
+    costPoints: 550,
+    description: 'Crackles with golden Arcade speed-reading energy!',
+  },
+  {
+    id: 'glasses-arcade',
+    name: 'Arcade Pixel Visor',
+    category: 'glasses',
+    emoji: '👾',
+    costPoints: 450,
+    description: 'Futuristic neon cyber-visor for High-Score Legends!',
+  },
+  {
+    id: 'neck-champion',
+    name: 'Golden Champion Collar',
+    category: 'neck',
+    emoji: '🥇',
+    costPoints: 600,
+    description: 'Royal gold collar worn by Hall of Fame Champions!',
+  },
+  {
+    id: 'wings-galaxy',
+    name: 'Cosmic Galaxy Wings',
+    category: 'wings',
+    emoji: '🌌',
+    costPoints: 750,
+    description: 'Shimmering stardust wings unlocked by Arcade Masters!',
+  },
 ];
 
 export const STICKERS: CollectibleSticker[] = [
@@ -157,5 +189,33 @@ export const STICKERS: CollectibleSticker[] = [
     worldUnlocked: 8,
     costPoints: 400,
     description: 'Supreme Maestro of both Treble and Bass Clefs!',
+  },
+  {
+    id: 'sticker-arcade-joy',
+    name: 'Arcade Turbo Joystick',
+    emoji: '🕹️',
+    costPoints: 350,
+    description: 'Awarded to fearless Arcade speed-readers!',
+  },
+  {
+    id: 'sticker-arcade-heart',
+    name: 'Golden Heart Guardian',
+    emoji: '💖',
+    costPoints: 450,
+    description: 'Shines brightly when you collect Extra Hearts in Arcade Mode!',
+  },
+  {
+    id: 'sticker-arcade-comet',
+    name: 'Rainbow Fever Comet',
+    emoji: '☄️',
+    costPoints: 550,
+    description: 'Blazes across the staff during 2x Rainbow Fever streaks!',
+  },
+  {
+    id: 'sticker-arcade-legend',
+    name: 'Hall of Fame Trophy',
+    emoji: '🏆',
+    costPoints: 700,
+    description: 'The ultimate trophy for topping the Maestro Leaderboard!',
   },
 ];

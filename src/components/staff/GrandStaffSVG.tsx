@@ -22,6 +22,7 @@ interface GrandStaffSVGProps {
   hintLevel?: 0 | 1 | 2;
   namingConvention: NamingConvention;
   showLabelsOnAll?: boolean;
+  isMysteryNote?: boolean;
   onNoteClick?: (noteId: NoteId) => void;
 }
 
@@ -70,6 +71,7 @@ export const GrandStaffSVG: React.FC<GrandStaffSVGProps> = ({
   hintLevel = 0,
   namingConvention,
   showLabelsOnAll = false,
+  isMysteryNote = false,
   onNoteClick,
 }) => {
   const isGrand = clefMode === 'grand';
@@ -392,16 +394,48 @@ export const GrandStaffSVG: React.FC<GrandStaffSVGProps> = ({
                 />
               )}
 
-              {/* Subtle target glow halo */}
-              {isTarget && (
-                <ellipse
-                  cx={x}
-                  cy={y}
-                  rx={22}
-                  ry={17}
-                  fill={useColors ? note.color : '#a855f7'}
-                  opacity={0.22}
-                />
+              {/* Subtle target glow halo (or Golden Mystery Halo in Arcade Mode!) */}
+              {isTarget && isMysteryNote ? (
+                <g>
+                  <ellipse
+                    cx={x}
+                    cy={y}
+                    rx={28}
+                    ry={22}
+                    fill="#fde047"
+                    opacity={0.55}
+                  />
+                  <ellipse
+                    cx={x}
+                    cy={y}
+                    rx={22}
+                    ry={17}
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth={2.5}
+                    strokeDasharray="4 3"
+                  />
+                  <text
+                    x={x + 22}
+                    y={y - 14}
+                    fontSize="14"
+                    fontWeight="bold"
+                    fill="#d97706"
+                  >
+                    ✨
+                  </text>
+                </g>
+              ) : (
+                isTarget && (
+                  <ellipse
+                    cx={x}
+                    cy={y}
+                    rx={22}
+                    ry={17}
+                    fill={useColors ? note.color : '#a855f7'}
+                    opacity={0.22}
+                  />
+                )
               )}
 
               {/* Note Stem */}
@@ -410,7 +444,7 @@ export const GrandStaffSVG: React.FC<GrandStaffSVGProps> = ({
                 y1={y}
                 x2={stemX}
                 y2={stemY2}
-                stroke={useColors ? note.color : '#1e1b4b'}
+                stroke={isTarget && isMysteryNote && !useColors ? '#d97706' : useColors ? note.color : '#1e1b4b'}
                 strokeWidth={3.5}
                 strokeLinecap="round"
               />
@@ -422,8 +456,8 @@ export const GrandStaffSVG: React.FC<GrandStaffSVGProps> = ({
                 rx={15}
                 ry={11}
                 transform={`rotate(-15 ${x} ${y})`}
-                fill={fill}
-                stroke={stroke}
+                fill={isTarget && isMysteryNote && !useColors ? '#f59e0b' : fill}
+                stroke={isTarget && isMysteryNote ? '#b45309' : stroke}
                 strokeWidth={2.5}
               />
 

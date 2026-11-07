@@ -16,6 +16,15 @@ import {
 } from '../store/useGameStore';
 import { getNoteStaffY } from '../components/staff/GrandStaffSVG';
 import { detectPitchFromBuffer } from '../engine/pitchDetection';
+import {
+  DEFAULT_RIVAL_LEADERBOARD,
+  calculateArcadeNoteScore,
+  getArcadeLevel,
+  getArcadeTimeLimitMs,
+  insertLeaderboardEntry,
+  rollArcadePowerUp,
+  shouldSpawnMysteryNote,
+} from '../data/arcade';
 
 describe('Maestro Core Music & Curriculum Tests', () => {
   it('defines all 15 white-key natural notes from C3 to C5 with accurate frequencies and landmarks', () => {
@@ -145,5 +154,87 @@ describe('Cross-Platform Detection, Pitch Detection & Magic Sync Code Tests', ()
     expect(decoded!.namingConvention).toBe('both');
     expect(decoded!.worldStars[1].piano).toBe(3);
     expect(decoded!.worldStars[1].bossCleared).toBe(true);
+  });
+});
+
+describe('Endless Arcade Mode & Leaderboard Tests', () => {
+  it('levels up every 6 notes and scales countdown timer from 12.0s down to a 3.5s floor', () => {
+    expect(getArcadeLevel(0)).toBe(1);
+    expect(getArcadeLevel(5)).toBe(1);
+    expect(getArcadeLevel(6)).toBe(2);
+    expect(getArcadeLevel(12)).toBe(3);
+
+    expect(getArcadeTimeLimitMs(1, 'piano')).toBe(12000);
+    expect(getArcadeTimeLimitMs(2, 'piano')).toBe(11000);
+    expect(getArcadeTimeLimitMs(9, 'piano')).toBe(4000);
+    expect(getArcadeTimeLimitMs(10, 'piano')).toBe(3500);
+    expect(getArcadeTimeLimitMs(20, 'piano')).toBe(3500); // Never drops below 3.5s floor
+    expect(getArcadeTimeLimitMs(1, 'mic')).toBe(13000); // +1.0s buffer for Real Piano Mic
+  });
+
+  it('calculates Arcade note scores with time bonus, streak bonus cap, and 2x Rainbow Fever', () => {
+    const baseScore = calculateArcadeNoteScore({
+      remainingRatio: 0.5,
+      streak: 2,
+      hasRainbowFever: false,
+    });
+    // 100 base + 25 time + 20 streak = 145
+    expect(baseScore).toBe(145);
+
+    const feverScore = calculateArcadeNoteScore({
+      remainingRatio: 1.0,
+      streak: 15, // Streak bonus caps at +100
+      hasRainbowFever: true,
+    });
+    // (100 base + 50 time + 100 capped streak) * 2 = 500
+    expect(feverScore).toBe(500);
+  });
+
+  it('spawns Mystery Golden Notes on multiples of 8 streak and rolls valid power-ups', () => {
+    expect(shouldSpawnMysteryNote(8, 0.99)).toBe(true);
+    expect(shouldSpawnMysteryNote(3, 0.10)).toBe(true);
+    expect(shouldSpawnMysteryNote(3, 0.50)).toBe(false);
+
+    // When shield is already active and lives are at max (5), neither unicorn-shield nor extra-heart is rolled
+    for (let r = 0; r < 1; r += 0.1) {
+      const drop = rollArcadePowerUp(5, true, r);
+      expect(drop).not.toBe('unicorn-shield');
+      expect(drop).not.toBe('extra-heart');
+    }
+  });
+
+  it('sorts and caps the Unified Hall of Fame Leaderboard at Top 10 and syncs via Magic Code', () => {
+    const updatedBoard = insertLeaderboardEntry(DEFAULT_RIVAL_LEADERBOARD, {
+      id: 'player-1',
+      playerName: 'Champion 🦄',
+      avatar: '👑',
+      score: 5200,
+      notesCorrect: 34,
+      maxLevel: 6,
+      mode: 'piano',
+      clef: 'grand',
+      isRival: false,
+      createdAt: Date.now(),
+    });
+
+    expect(updatedBoard[0].playerName).toBe('Champion 🦄');
+    expect(updatedBoard[0].score).toBe(5200);
+
+    const init = createInitialPlayerState();
+    const syncCode = encodeSyncCode({
+      unlockedWorld: 8,
+      points: 900,
+      worldStars: init.worldStars,
+      namingConvention: 'letters',
+      colorMode: 'progressive',
+      arcadeLeaderboard: updatedBoard,
+    });
+
+    const decoded = decodeSyncCode(syncCode);
+    expect(decoded).not.toBeNull();
+    expect(decoded!.arcadeLeaderboard).toBeDefined();
+    expect(decoded!.arcadeLeaderboard![0].playerName).toBe('Champion 🦄');
+    expect(decoded!.arcadeLeaderboard![0].avatar).toBe('👑');
+    expect(decoded!.arcadeLeaderboard![0].score).toBe(5200);
   });
 });

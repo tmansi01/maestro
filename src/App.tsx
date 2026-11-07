@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { WORLDS, WorldDefinition } from './data/curriculum';
+import { WorldDefinition } from './data/curriculum';
 import { FreePracticeConfig, GameMode, useGameStore } from './store/useGameStore';
 import { WorldMapView } from './views/WorldMapView';
 import { LessonView } from './views/LessonView';
 import { GameSessionView } from './views/GameSessionView';
 import { BossConcertView } from './views/BossConcertView';
+import { ArcadeView } from './views/ArcadeView';
 import { BoutiqueModal } from './components/modals/BoutiqueModal';
 import { ParentSettingsModal } from './components/modals/ParentSettingsModal';
 import { audioEngine } from './engine/audio';
@@ -16,6 +17,7 @@ type ActiveScreen =
   | { type: 'lesson'; world: WorldDefinition }
   | { type: 'game'; world: WorldDefinition; mode: GameMode }
   | { type: 'free-practice'; config: FreePracticeConfig }
+  | { type: 'arcade' }
   | { type: 'boss'; world: WorldDefinition };
 
 export const App: React.FC = () => {
@@ -24,6 +26,8 @@ export const App: React.FC = () => {
     completeLesson,
     recordGameResult,
     completeBossConcert,
+    recordArcadeRun,
+    resetArcadeLeaderboard,
     buyOrEquipAccessory,
     buySticker,
     updateSettings,
@@ -62,6 +66,7 @@ export const App: React.FC = () => {
             onStartGame={(world, mode) => setScreen({ type: 'game', world, mode })}
             onStartBoss={(world) => setScreen({ type: 'boss', world })}
             onStartFreePractice={(config) => setScreen({ type: 'free-practice', config })}
+            onOpenArcade={() => setScreen({ type: 'arcade' })}
             onOpenBoutique={() => setShowBoutique(true)}
             onOpenParentSettings={() => setShowParentSettings(true)}
           />
@@ -104,7 +109,7 @@ export const App: React.FC = () => {
 
         {screen.type === 'free-practice' && (
           <GameSessionView
-            title="Free Practice Arcade"
+            title="Relaxed Free Practice"
             clefMode={screen.config.clef}
             notePool={screen.config.selectedNotes}
             initialMode={screen.config.mode}
@@ -118,6 +123,14 @@ export const App: React.FC = () => {
             onCompleteRound={(mode, stars, points, missedNotes, wasSpeed) => {
               recordGameResult(1, mode, Math.min(1, stars), points, missedNotes, wasSpeed);
             }}
+            onBack={() => setScreen({ type: 'map' })}
+          />
+        )}
+
+        {screen.type === 'arcade' && (
+          <ArcadeView
+            playerState={state}
+            onSaveArcadeRun={recordArcadeRun}
             onBack={() => setScreen({ type: 'map' })}
           />
         )}
@@ -149,6 +162,7 @@ export const App: React.FC = () => {
           playerState={state}
           onUpdateSettings={updateSettings}
           onUnlockAllWorlds={unlockAllWorlds}
+          onResetArcadeLeaderboard={resetArcadeLeaderboard}
           onResetProgress={resetProgress}
           getSyncCode={getSyncCode}
           onApplySyncCode={applySyncCode}

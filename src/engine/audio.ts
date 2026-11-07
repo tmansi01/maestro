@@ -147,6 +147,91 @@ class PianoAudioEngine {
       }, i * 140);
     });
   }
+
+  /**
+   * Arcade Level-Up chime (fast rising major arpeggio).
+   */
+  public playLevelUp(): void {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const freqs = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+    freqs.forEach((f, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f, now + idx * 0.055);
+      gain.gain.setValueAtTime(0.001, now + idx * 0.055);
+      gain.gain.linearRampToValueAtTime(0.2, now + idx * 0.055 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.3);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + idx * 0.055);
+      osc.stop(now + idx * 0.055 + 0.32);
+    });
+  }
+
+  /**
+   * Shimmering magic power-up reward sound for Mystery Golden Notes!
+   */
+  public playPowerUp(): void {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const freqs = [659.25, 880, 1174.66, 1567.98];
+    freqs.forEach((f, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, now + idx * 0.05);
+      gain.gain.setValueAtTime(0.001, now + idx * 0.05);
+      gain.gain.linearRampToValueAtTime(0.18, now + idx * 0.05 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + idx * 0.05);
+      osc.stop(now + idx * 0.05 + 0.42);
+    });
+  }
+
+  /**
+   * Protective bubble pop when Unicorn Shield absorbs a mistake!
+   */
+  public playShieldPop(): void {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(360, now);
+    osc.frequency.exponentialRampToValueAtTime(720, now + 0.16);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.24);
+  }
+
+  /**
+   * Friendly Arcade Game-Over cadence (warm descending piano notes).
+   */
+  public playArcadeGameOver(): void {
+    if (this.isMuted) return;
+    const notes: NoteId[] = ['G4', 'E4', 'D4', 'C4'];
+    notes.forEach((n, i) => {
+      setTimeout(() => {
+        this.playNote(n, i === notes.length - 1 ? 1.5 : 0.4);
+      }, i * 180);
+    });
+  }
 }
 
 export const audioEngine = new PianoAudioEngine();

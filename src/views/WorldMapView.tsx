@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Sparkles,
   Star,
+  Trophy,
   Zap,
 } from 'lucide-react';
 import { WORLDS, WorldDefinition } from '../data/curriculum';
@@ -24,6 +25,7 @@ interface WorldMapViewProps {
   onStartGame: (world: WorldDefinition, mode: GameMode) => void;
   onStartBoss: (world: WorldDefinition) => void;
   onStartFreePractice: (config: FreePracticeConfig) => void;
+  onOpenArcade: () => void;
   onOpenBoutique: () => void;
   onOpenParentSettings: () => void;
 }
@@ -34,6 +36,7 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
   onStartGame,
   onStartBoss,
   onStartFreePractice,
+  onOpenArcade,
   onOpenBoutique,
   onOpenParentSettings,
 }) => {
@@ -106,6 +109,15 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
 
           <button
             type="button"
+            onClick={onOpenArcade}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:brightness-105 text-white font-black text-xs sm:text-sm shadow-sm cursor-pointer transition"
+          >
+            <Trophy className="w-4 h-4" />
+            🕹️ Arcade Mode
+          </button>
+
+          <button
+            type="button"
             onClick={() => setShowFreePractice((v) => !v)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-cyan-600 hover:bg-cyan-700 text-white font-extrabold text-xs sm:text-sm shadow-xs cursor-pointer transition"
           >
@@ -141,8 +153,8 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
         equipped={playerState.equippedAccessories}
         speechBubble={
           showFreePractice
-            ? 'Welcome to Free Practice Arcade! Pick any notes and clef you want to practice today!'
-            : `Welcome back! You have unlocked up to World ${playerState.unlockedWorld}. Pick any unlocked World below to learn, play, or replay!`
+            ? 'Welcome to Relaxed Free Practice! Pick any notes and clef to practice at your own pace!'
+            : `Welcome back! Pick any unlocked World below—or try 🕹️ Arcade Mode to beat the Hall of Fame Leaderboard!`
         }
       />
 
@@ -152,10 +164,10 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-800">
-                🎮 Free Practice Arcade
+                🎵 Relaxed Free Practice
               </h2>
               <p className="text-sm text-slate-600 font-medium">
-                Customize your own note pool, clef, and game mode!
+                Customize your own note pool, clef, and game mode with no countdown timer!
               </p>
             </div>
             <button
