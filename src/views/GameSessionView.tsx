@@ -78,7 +78,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
   onBack,
 }) => {
   const [mode, setMode] = useState<GameMode>(initialMode);
-  // Track her current star tier across consecutive rounds so she progresses Tier 1 (⭐) -> Tier 2 (⭐⭐) -> Tier 3 (⭐⭐⭐)
+  // Track her current star tier across consecutive rounds so she progresses Star 1 (🌈) -> Star 2 (🎵) -> Star 3 (🏆)
   const [activeTierStars, setActiveTierStars] = useState<number>(currentModeStars);
 
   const computeQueueLength = (tierStars: number) =>
@@ -105,8 +105,8 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
     initialMode === 'mic'
       ? 'Play this note on your piano! 🎤'
       : currentModeStars === 0
-      ? 'Tier 1: Rainbow Helper! Which note is this? 🌈'
-      : 'Sight-Reader Mode! Count from your Landmark! 🎵'
+      ? '🌈 Rainbow Notes! Which note is this?'
+      : '🎵 Real Notes! Count from your Landmark!'
   );
   const [unicornMood, setUnicornMood] = useState<'happy' | 'excited' | 'encouraging' | 'listening'>(
     initialMode === 'mic' ? 'listening' : 'happy'
@@ -114,15 +114,15 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
   const currentNoteId = queue[currentIndex] || notePool[0] || 'C4';
   const currentNote = NOTES[currentNoteId];
-  // Progressive color scaffolding: ON for Tier 1 (0 stars), OFF (classic black-and-white) for Tier 2 & Tier 3!
+  // Progressive color scaffolding: ON for Star 1 (0 stars), OFF (classic black-and-white) for Star 2 & Star 3!
   const useColors = shouldUseNoteColors(colorMode, activeTierStars, mistakeCount);
 
   const tierInfo =
     activeTierStars === 0
-      ? { badge: '⭐ Tier 1: Rainbow Guide', color: 'bg-pink-100 text-pink-900 border-pink-300' }
+      ? { badge: '🌈 ⭐1 Rainbow', color: 'bg-pink-100 text-pink-900 border-pink-300' }
       : activeTierStars === 1
-      ? { badge: '⭐⭐ Tier 2: Sight Reader', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
-      : { badge: '⭐⭐⭐ Tier 3: Master', color: 'bg-amber-100 text-amber-900 border-amber-300' };
+      ? { badge: '🎵 ⭐2 Real Notes', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
+      : { badge: '🏆 ⭐3 Master', color: 'bg-amber-100 text-amber-900 border-amber-300' };
 
   const startFreshRound = useCallback(
     (selectedMode: GameMode, nextTierStars = activeTierStars, isSpeed = speedChallenge) => {
@@ -147,8 +147,8 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
         selectedMode === 'mic'
           ? 'Play this note on your piano! 🎤'
           : nextTierStars === 0
-          ? 'Tier 1: Rainbow Helper! Which note is this? 🌈'
-          : 'Sight-Reader Mode! Count from your Landmark! 🎵'
+          ? '🌈 Rainbow Notes! Which note is this?'
+          : '🎵 Real Notes! Count from your Landmark!'
       );
     },
     [notePool, trickyNotesCount, activeTierStars, speedChallenge, roundLength]
@@ -186,9 +186,9 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
     if (currentIndex + 1 >= queue.length) {
       const accuracy = nextFirstTry / queue.length;
       // Progressive 3-Tier Star Award:
-      // - Tier 1 (activeTierStars === 0, Rainbow Colors ON): caps at 1 Star ⭐ so she must play Tier 2 in Black & White!
-      // - Tier 2 (activeTierStars === 1, Black & White): awards 2 Stars ⭐⭐ at >= 75% accuracy (unlocking Boss Song!)
-      // - Tier 3 (activeTierStars >= 2, Black & White 12+ notes): awards 3 Stars ⭐⭐⭐ at >= 85% accuracy!
+      // - Star 1 (activeTierStars === 0, Rainbow Colors ON): caps at 1 Star ⭐ so she must play Star 2 in Black & White!
+      // - Star 2 (activeTierStars === 1, Black & White): awards 2 Stars ⭐⭐ at >= 75% accuracy (unlocking Boss Song!)
+      // - Star 3 (activeTierStars >= 2, Black & White 12+ notes): awards 3 Stars ⭐⭐⭐ at >= 85% accuracy!
       let stars = 1;
       if (activeTierStars === 0) {
         stars = 1;
@@ -285,7 +285,8 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
     const canUnlockBossNow = earnedStars >= 2 && Boolean(onStartBossConcert);
 
     return (
-      <div className="max-w-xl mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-purple-300 text-center flex flex-col items-center gap-4">
+      <div className="max-w-lg mx-auto w-full bg-white rounded-3xl p-6 sm:p-7 shadow-xl border-4 border-purple-300 text-center flex flex-col items-center gap-4">
+        {/* 3 Giant Animated Stars */}
         <div className="flex gap-3">
           {[1, 2, 3].map((s) => (
             <Star
@@ -301,75 +302,104 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
         <h2 className="text-2xl sm:text-3xl font-black text-purple-900">
           {earnedStars === 3
-            ? 'World Master! 3 Stars! ⭐⭐⭐'
+            ? '🏆 World Master! 3 Stars!'
             : earnedStars === 2
-            ? 'Sight-Reader Star! 2 Stars! ⭐⭐'
-            : 'Rainbow Star! 1 Star! ⭐'}
+            ? '🎵 2 Stars! Song Unlocked!'
+            : '🌈 1 Star! Great Start!'}
         </h2>
 
-        <p className="text-sm sm:text-base font-bold text-slate-600">
-          {earnedStars === 1
-            ? 'Next up: Tier 2 turns off rainbow colors so you read real sheet music!'
-            : earnedStars === 2
-            ? 'You read real black-and-white notes! The Boss Song is now unlocked!'
-            : 'Amazing! You mastered all 3 tiers in this World!'}
-        </p>
+        {/* Visual 3-Step Progress Pill */}
+        <div className="flex items-center gap-2 text-xs sm:text-sm font-black">
+          <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">
+            🌈 ⭐1
+          </span>
+          <span className="text-slate-300">➔</span>
+          <span
+            className={`px-3 py-1 rounded-full ${
+              earnedStars >= 2
+                ? 'bg-emerald-100 text-emerald-800'
+                : 'bg-indigo-100 text-indigo-900 ring-2 ring-indigo-300'
+            }`}
+          >
+            🎵 ⭐2 Real Notes
+          </span>
+          <span className="text-slate-300">➔</span>
+          <span
+            className={`px-3 py-1 rounded-full ${
+              earnedStars >= 2
+                ? 'bg-amber-100 text-amber-900 ring-2 ring-amber-300'
+                : 'bg-slate-100 text-slate-400'
+            }`}
+          >
+            👑 Song
+          </span>
+        </div>
 
-        <div className="flex items-center gap-2 bg-fuchsia-100 text-fuchsia-900 px-5 py-2 rounded-2xl font-black text-lg">
+        <div className="flex items-center gap-2 bg-fuchsia-100 text-fuchsia-900 px-5 py-1.5 rounded-2xl font-black text-base">
           <Sparkles className="w-5 h-5 text-fuchsia-600" />
           +{sessionPoints} Sparkles
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3 w-full pt-2">
-          {/* Primary Progression CTA */}
-          {earnedStars === 1 && (
+        {/* 1 GIANT PRIMARY NEXT-STEP BUTTON */}
+        <div className="w-full pt-1">
+          {earnedStars === 1 ? (
             <button
               type="button"
               onClick={() => startFreshRound(mode, 1, speedChallenge)}
-              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black text-base shadow-lg hover:scale-105 flex items-center gap-2 cursor-pointer"
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black text-base sm:text-lg shadow-lg hover:scale-[1.02] transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Play className="w-5 h-5 fill-white" />
-              Play Tier 2: Black & White (⭐⭐)
+              <Play className="w-6 h-6 fill-white" />
+              <span>Next: 🎵 Star 2 (Real Notes)!</span>
             </button>
-          )}
-
-          {canUnlockBossNow && (
+          ) : canUnlockBossNow ? (
             <button
               type="button"
               onClick={onStartBossConcert}
-              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white font-black text-base shadow-lg hover:scale-105 flex items-center gap-2 cursor-pointer"
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white font-black text-base sm:text-lg shadow-lg hover:scale-[1.02] transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Trophy className="w-5 h-5" />
-              Play Boss Song! 👑
+              <Trophy className="w-6 h-6" />
+              <span>👑 Play Boss Song!</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => startFreshRound(mode, earnedStars, speedChallenge)}
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-base sm:text-lg shadow-lg hover:scale-[1.02] transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Play className="w-6 h-6 fill-white" />
+              <span>Play Again!</span>
             </button>
           )}
+        </div>
 
+        {/* Compact Secondary Actions Row */}
+        <div className="flex items-center justify-center gap-3 w-full">
           {earnedStars === 2 && (
             <button
               type="button"
               onClick={() => startFreshRound(mode, 2, speedChallenge)}
-              className="px-5 py-3.5 rounded-2xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-base flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer"
             >
-              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-              Go for 3rd Star (⭐⭐⭐)
+              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+              Try for 3rd Star
             </button>
           )}
 
           <button
             type="button"
             onClick={() => startFreshRound(mode, earnedStars, speedChallenge)}
-            className="px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-base flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer"
           >
-            <RotateCcw className="w-5 h-5" />
+            <RotateCcw className="w-4 h-4" />
             Replay
           </button>
 
           <button
             type="button"
             onClick={onBack}
-            className="px-5 py-3.5 rounded-2xl bg-slate-800 text-white font-black text-base cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-slate-800 text-white font-black text-xs sm:text-sm cursor-pointer"
           >
-            Map
+            🗺️ Map
           </button>
         </div>
       </div>
@@ -378,7 +408,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
   return (
     <div className="flex flex-col gap-2.5 max-w-5xl mx-auto w-full">
-      {/* Clean Top Bar: Map + Tier Badge + Visual Dot Trail + Score */}
+      {/* Clean Top Bar: Map + Star Badge + Visual Dot Trail + Inline Mode Pill + Score */}
       <div className="flex items-center justify-between gap-2 bg-white/95 px-4 py-2.5 rounded-2xl shadow-sm border-2 border-purple-200">
         <div className="flex items-center gap-2 shrink-0">
           <button
@@ -391,7 +421,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
           </button>
 
           <span
-            className={`hidden sm:inline-flex items-center px-2.5 py-1 rounded-xl border text-xs font-black ${tierInfo.color}`}
+            className={`inline-flex items-center px-2.5 py-1 rounded-xl border text-xs font-black ${tierInfo.color}`}
           >
             {tierInfo.badge}
           </span>
@@ -413,8 +443,30 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
           ))}
         </div>
 
-        {/* Streak & Points */}
+        {/* Inline Mode Switcher (🎹 | 🫧 | 🎤) + Streak & Points */}
         <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+            {(
+              [
+                { id: 'piano' as const, emoji: '🎹', title: 'Piano' },
+                { id: 'bubbles' as const, emoji: '🫧', title: 'Bubbles' },
+                { id: 'mic' as const, emoji: '🎤', title: 'Real Piano Mic' },
+              ]
+            ).map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => startFreshRound(m.id, activeTierStars, speedChallenge)}
+                title={m.title}
+                className={`px-2 py-1 rounded-lg text-xs font-black cursor-pointer transition ${
+                  mode === m.id ? 'bg-white shadow-xs scale-105' : 'opacity-60 hover:opacity-100'
+                }`}
+              >
+                {m.emoji}
+              </button>
+            ))}
+          </div>
+
           {canSpeedChallenge && (
             <button
               type="button"

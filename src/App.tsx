@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { WorldDefinition } from './data/curriculum';
+import { WORLDS, WorldDefinition } from './data/curriculum';
 import { FreePracticeConfig, GameMode, useGameStore } from './store/useGameStore';
 import { HomeHubView } from './views/HomeHubView';
 import { WorldMapView } from './views/WorldMapView';
@@ -159,6 +159,14 @@ export const App: React.FC = () => {
             equipped={state.equippedAccessories}
             onConcertComplete={(points) => {
               completeBossConcert(screen.world.id, points);
+            }}
+            onNextWorld={() => {
+              const nextW = WORLDS.find((w) => w.id === screen.world.id + 1);
+              if (nextW) {
+                setScreen({ type: 'lesson', world: nextW });
+              } else {
+                setScreen({ type: 'map', freePractice: false });
+              }
             }}
             onBack={() => setScreen({ type: 'map', freePractice: false })}
           />

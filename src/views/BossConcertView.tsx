@@ -16,6 +16,7 @@ interface BossConcertViewProps {
   namingConvention: NamingConvention;
   equipped: EquippedAccessories;
   onConcertComplete: (pointsEarned: number) => void;
+  onNextWorld?: () => void;
   onBack: () => void;
 }
 
@@ -25,6 +26,7 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
   namingConvention,
   equipped,
   onConcertComplete,
+  onNextWorld,
   onBack,
 }) => {
   const melody = world.bossMelody.notes;
@@ -77,7 +79,7 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
 
   if (concertDone) {
     return (
-      <div className="max-w-xl mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-amber-300 text-center flex flex-col items-center gap-5">
+      <div className="max-w-lg mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-amber-300 text-center flex flex-col items-center gap-4">
         <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center text-amber-500 shadow-inner">
           <Trophy className="w-12 h-12" />
         </div>
@@ -88,34 +90,46 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
 
         {world.id < 8 && (
           <p className="text-sm sm:text-base font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-1.5 rounded-full">
-            🔓 World {world.id + 1} is now unlocked on your Adventure Map!
+            🔓 World {world.id + 1} Unlocked!
           </p>
         )}
 
-        <div className="flex items-center gap-2 bg-fuchsia-100 text-fuchsia-900 px-5 py-2 rounded-2xl font-black text-lg">
+        <div className="flex items-center gap-2 bg-fuchsia-100 text-fuchsia-900 px-5 py-1.5 rounded-2xl font-black text-lg">
           <Sparkles className="w-5 h-5 text-fuchsia-600" />
           +100 Sparkles!
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3 pt-2">
+        {/* 1-Tap Next World Primary CTA */}
+        {world.id < 8 && onNextWorld && (
+          <button
+            type="button"
+            onClick={onNextWorld}
+            className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black text-base sm:text-lg shadow-lg hover:scale-[1.02] transition flex items-center justify-center gap-2 cursor-pointer mt-1"
+          >
+            <Play className="w-6 h-6 fill-white" />
+            <span>🚀 Start World {world.id + 1}!</span>
+          </button>
+        )}
+
+        <div className="flex flex-wrap justify-center gap-3 pt-1">
           <button
             type="button"
             onClick={() => {
               setNoteIdx(0);
               setConcertDone(false);
             }}
-            className="px-5 py-3.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-black flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-black text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer"
           >
-            <RotateCcw className="w-5 h-5" />
+            <RotateCcw className="w-4 h-4" />
             Play Song Again
           </button>
 
           <button
             type="button"
             onClick={onBack}
-            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black shadow-lg cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-slate-800 text-white font-black text-xs sm:text-sm cursor-pointer"
           >
-            Back to Map
+            🗺️ Map
           </button>
         </div>
       </div>
