@@ -41,6 +41,27 @@ interface WorldMapViewProps {
 
 type PracticePresetId = 'my-notes' | 'treble' | 'bass' | 'grand';
 
+const CHAPTERS = [
+  {
+    id: 1 as const,
+    title: 'Part 1: ✋ Right Hand • Treble Clef (𝄞)',
+    badge: '1 Octave (C to High C)',
+    color: 'border-cyan-300 bg-cyan-50/70 text-cyan-950',
+  },
+  {
+    id: 2 as const,
+    title: 'Part 2: 🤚 Left Hand • Bass Clef (𝄢)',
+    badge: '1 Octave (Low C to Middle C)',
+    color: 'border-emerald-300 bg-emerald-50/70 text-emerald-950',
+  },
+  {
+    id: 3 as const,
+    title: 'Part 3: 🌟 Both Hands • Grand Staff (𝄞 + 𝄢)',
+    badge: '2 Octaves (All 15 Notes!)',
+    color: 'border-fuchsia-300 bg-fuchsia-50/70 text-fuchsia-950',
+  },
+];
+
 export const WorldMapView: React.FC<WorldMapViewProps> = ({
   playerState,
   initialShowFreePractice = false,
@@ -51,7 +72,6 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
   onOpenBoutique,
   onBackHome,
 }) => {
-  // Which World popup modal is open? (Defaults to null so she sees the clean 8-island map first, or opens on tap)
   const [modalWorldId, setModalWorldId] = useState<number | null>(null);
   const [showFreePractice, setShowFreePractice] = useState(initialShowFreePractice);
 
@@ -64,7 +84,7 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
       }
     }
     const list = ALL_NOTE_IDS.filter((n) => set.has(n));
-    return list.length >= 2 ? list : (['B3', 'C4', 'D4'] as NoteId[]);
+    return list.length >= 2 ? list : (['C4', 'D4', 'E4'] as NoteId[]);
   }, [playerState.unlockedWorld]);
 
   const unlockedClef: ClefType = useMemo(() => {
@@ -132,7 +152,6 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
     const fpBubble = 'Pick your notes and tap Play!';
     return (
       <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
-        {/* Top Bar */}
         <header className="flex items-center justify-between gap-3 bg-white/95 px-4 sm:px-5 py-3 rounded-3xl shadow-sm border-3 border-cyan-200">
           <button
             type="button"
@@ -162,7 +181,6 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
         />
 
         <div className="bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl border-4 border-cyan-300 flex flex-col gap-5">
-          {/* 1. Big Visual Preset Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {(
               [
@@ -198,7 +216,6 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
             })}
           </div>
 
-          {/* 2. Big Visual Game Mode Pills + Giant Play CTA */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-200">
             <div className="grid grid-cols-3 gap-2 flex-1">
               {(
@@ -240,7 +257,6 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
             </button>
           </div>
 
-          {/* Optional Collapsible Custom Note Picker */}
           <div className="border-t border-slate-200 pt-2">
             <button
               type="button"
@@ -288,14 +304,14 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
   }
 
   // ============================================================================
-  // VIEW B: CLEAN 8-WORLD STEPPING-STONE ISLANDS + FOCUSED WORLD STAGE MODAL
+  // VIEW B: PROGRESSIVE 3-CHAPTER ADVENTURE MAP (TREBLE ➔ BASS ➔ BOTH)
   // ============================================================================
-  const mapPrompt = `Tap World ${playerState.unlockedWorld} to play!`;
+  const mapPrompt = `Tap World ${playerState.unlockedWorld} to learn & play!`;
 
   return (
-    <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full">
+    <div className="flex flex-col gap-3.5 max-w-5xl mx-auto w-full">
       {/* Clean Top Bar */}
-      <header className="flex items-center justify-between gap-3 bg-white/95 px-4 sm:px-5 py-3 rounded-3xl shadow-sm border-3 border-purple-200">
+      <header className="flex items-center justify-between gap-3 bg-white/95 px-4 sm:px-5 py-2.5 rounded-3xl shadow-sm border-3 border-purple-200">
         <button
           type="button"
           onClick={onBackHome}
@@ -306,7 +322,7 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
         </button>
 
         <h1 className="text-lg sm:text-2xl font-black text-purple-900">
-          🗺️ Adventure Map
+          🗺️ 8-World Adventure
         </h1>
 
         <div className="flex items-center gap-2">
@@ -335,106 +351,142 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
         onReplaySpeech={() => speechNarrator.speak(mapPrompt)}
       />
 
-      {/* 8 Big Stepping-Stone World Islands (No cluttered side-inspector!) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
-        {WORLDS.map((world) => {
-          const isUnlocked = world.id <= playerState.unlockedWorld;
-          const isCurrent = world.id === playerState.unlockedWorld;
-          const prog = playerState.worldStars[world.id] || {
-            lessonDone: false,
-            piano: 0,
-            bubbles: 0,
-            mic: 0,
-            bossCleared: false,
-            speedBadge: false,
-          };
-          const bestStars = Math.max(prog.piano, prog.bubbles, prog.mic);
+      {/* 3 Progressive Pedagogical Chapters: Right Hand (Treble) ➔ Left Hand (Bass) ➔ Both Hands (Grand Staff) */}
+      <div className="flex flex-col gap-3.5">
+        {CHAPTERS.map((chap) => {
+          const chapterWorlds = WORLDS.filter((w) => w.chapter === chap.id);
 
           return (
-            <button
-              key={world.id}
-              type="button"
-              onClick={() => {
-                if (isUnlocked) {
-                  setModalWorldId(world.id);
-                } else {
-                  speechNarrator.speak(
-                    `Finish World ${world.id - 1} song first to unlock World ${world.id}!`
-                  );
-                }
-              }}
-              className={`group relative rounded-3xl p-4 sm:p-5 border-4 flex flex-col items-center justify-between text-center min-h-40 sm:min-h-44 transition-all cursor-pointer ${
-                isCurrent
-                  ? 'bg-white border-purple-600 shadow-xl ring-4 ring-purple-300/70 scale-[1.02]'
-                  : isUnlocked
-                  ? 'bg-white/95 border-purple-200 hover:border-purple-400 hover:scale-[1.02] shadow-md'
-                  : 'bg-slate-100/80 border-slate-300 opacity-70'
-              }`}
+            <section
+              key={chap.id}
+              className={`rounded-3xl p-3.5 sm:p-4 border-2 ${chap.color} flex flex-col gap-2.5`}
             >
-              {/* Top Row: World Number + Crown/Lock */}
-              <div className="w-full flex items-center justify-between">
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
-                    isUnlocked
-                      ? 'bg-purple-100 text-purple-800'
-                      : 'bg-slate-200 text-slate-600'
-                  }`}
-                >
-                  World {world.id}
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                <h2 className="font-black text-sm sm:text-base">{chap.title}</h2>
+                <span className="text-xs font-extrabold bg-white/80 px-2.5 py-0.5 rounded-full border border-slate-200">
+                  🎹 {chap.badge}
                 </span>
-
-                {prog.bossCleared ? (
-                  <span
-                    className="w-7 h-7 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center"
-                    title="Song Cleared!"
-                  >
-                    <Crown className="w-4 h-4 text-amber-500 fill-amber-500" />
-                  </span>
-                ) : !isUnlocked ? (
-                  <Lock className="w-4 h-4 text-slate-400" />
-                ) : isCurrent ? (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[11px] font-black animate-bounce">
-                    ▶ Play!
-                  </span>
-                ) : null}
               </div>
 
-              {/* Giant Center Emoji */}
-              <div className="text-4xl sm:text-5xl my-1.5 group-hover:scale-110 transition-transform">
-                {isUnlocked ? world.emoji : '🔒'}
-              </div>
+              <div
+                className={`grid gap-3 ${
+                  chapterWorlds.length === 4
+                    ? 'grid-cols-2 sm:grid-cols-4'
+                    : chapterWorlds.length === 3
+                    ? 'grid-cols-1 sm:grid-cols-3'
+                    : 'grid-cols-1'
+                }`}
+              >
+                {chapterWorlds.map((world) => {
+                  const isUnlocked = world.id <= playerState.unlockedWorld;
+                  const isCurrent = world.id === playerState.unlockedWorld;
+                  const prog = playerState.worldStars[world.id] || {
+                    lessonDone: false,
+                    piano: 0,
+                    bubbles: 0,
+                    mic: 0,
+                    bossCleared: false,
+                    speedBadge: false,
+                  };
+                  const bestStars = Math.max(prog.piano, prog.bubbles, prog.mic);
 
-              {/* Short 2-Word Title + Visual Stars */}
-              <div className="w-full flex flex-col items-center gap-1">
-                <h3 className="font-black text-slate-800 text-sm sm:text-base leading-tight">
-                  {world.title}
-                </h3>
+                  return (
+                    <button
+                      key={world.id}
+                      type="button"
+                      onClick={() => {
+                        if (isUnlocked) {
+                          setModalWorldId(world.id);
+                        } else {
+                          speechNarrator.speak(
+                            `Finish World ${world.id - 1} song first to unlock World ${world.id}!`
+                          );
+                        }
+                      }}
+                      className={`group relative rounded-2xl p-3.5 sm:p-4 border-3 flex flex-col items-center justify-between text-center min-h-36 transition-all cursor-pointer ${
+                        isCurrent
+                          ? 'bg-white border-purple-600 shadow-lg ring-3 ring-purple-300 scale-[1.01]'
+                          : isUnlocked
+                          ? 'bg-white/95 border-white hover:border-purple-400 shadow-sm'
+                          : 'bg-slate-100/75 border-slate-200 opacity-70'
+                      }`}
+                    >
+                      {/* Top Row: World Number + Note Count + Status */}
+                      <div className="w-full flex items-center justify-between gap-1">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
+                            isUnlocked
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-slate-200 text-slate-600'
+                          }`}
+                        >
+                          World {world.id} • {world.notePool.length} Notes
+                        </span>
 
-                {isUnlocked ? (
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3].map((s) => (
-                      <Star
-                        key={s}
-                        className={`w-4 h-4 ${
-                          s <= bestStars
-                            ? 'text-yellow-400 fill-yellow-400'
-                            : 'text-slate-200 fill-slate-200'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-[11px] font-bold text-slate-500">
-                    Locked
-                  </span>
-                )}
+                        {prog.bossCleared ? (
+                          <span
+                            className="w-6 h-6 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center"
+                            title="Boss Song Cleared!"
+                          >
+                            <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                          </span>
+                        ) : !isUnlocked ? (
+                          <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        ) : isCurrent ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black animate-bounce">
+                            ▶ Here!
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Center Emoji + Landmark Badge */}
+                      <div className="flex flex-col items-center my-1">
+                        <div className="text-3xl sm:text-4xl group-hover:scale-110 transition-transform">
+                          {isUnlocked ? world.emoji : '🔒'}
+                        </div>
+                        <span className="text-[11px] font-extrabold text-purple-700 mt-0.5">
+                          {world.landmarkBadge}
+                        </span>
+                      </div>
+
+                      {/* Title + Subtitle + 3-Tier Stars */}
+                      <div className="w-full flex flex-col items-center gap-0.5">
+                        <h3 className="font-black text-slate-800 text-sm sm:text-base leading-tight">
+                          {world.title}
+                        </h3>
+                        <p className="text-[11px] font-bold text-slate-500">
+                          {world.subtitle}
+                        </p>
+
+                        {isUnlocked ? (
+                          <div className="flex items-center gap-1 mt-1">
+                            {[1, 2, 3].map((s) => (
+                              <Star
+                                key={s}
+                                className={`w-4 h-4 ${
+                                  s <= bestStars
+                                    ? 'text-yellow-400 fill-yellow-400'
+                                    : 'text-slate-200 fill-slate-200'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-400 mt-1">
+                            Locked
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            </button>
+            </section>
           );
         })}
       </div>
 
-      {/* FOCUSED WORLD STAGE MODAL (Opens when she taps an unlocked World) */}
+      {/* FOCUSED WORLD STAGE MODAL (Enforces Step 1 Story ➔ Step 2 Practice Tiers ➔ Step 3 Boss Song) */}
       {modalWorld && (
         <div
           onClick={() => setModalWorldId(null)}
@@ -451,14 +503,22 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
               <div className="flex items-center gap-3">
                 <span className="text-4xl sm:text-5xl">{modalWorld.emoji}</span>
                 <div>
-                  <span className="text-xs font-black uppercase bg-white/25 px-2.5 py-0.5 rounded-full">
-                    World {modalWorld.id}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs font-black uppercase bg-white/25 px-2.5 py-0.5 rounded-full">
+                      World {modalWorld.id}
+                    </span>
+                    <span className="text-xs font-black bg-white/25 px-2.5 py-0.5 rounded-full">
+                      {modalWorld.landmarkBadge}
+                    </span>
+                  </div>
                   <h2 className="text-xl sm:text-2xl font-black mt-1">
                     {modalWorld.title}
                   </h2>
-                  {/* Clean Note Chips (No confusing C4/F3 numbers!) */}
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  <p className="text-xs text-white/90 font-bold">
+                    {modalWorld.description}
+                  </p>
+                  {/* Clean Note Chips */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
                     {modalWorld.notePool.map((nId) => {
                       const badge = getNoteLandmarkBadge(nId);
                       return (
@@ -498,46 +558,94 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
                 speedBadge: false,
               };
               const maxModeStars = Math.max(prog.piano, prog.bubbles, prog.mic);
-              const songUnlocked = maxModeStars > 0 || prog.bossCleared;
+              const gamesUnlocked = prog.lessonDone;
+              // Boss Song unlocks at 2⭐⭐ (after she proves she can read the notes in Black & White!)
+              const songUnlocked = maxModeStars >= 2 || prog.bossCleared;
 
-              // Determine the 1 Big Recommended Action Button!
               const primaryAction = !prog.lessonDone
                 ? {
-                    label: '📖 Start Story!',
+                    label: '📖 Step 1: Start Story Lesson!',
+                    sub: 'Learn the Landmark trick first to unlock the games!',
                     onClick: () => onStartLesson(modalWorld),
                     gradient: 'from-purple-600 to-pink-600',
                   }
                 : maxModeStars === 0
                 ? {
-                    label: '🎹 Play Piano!',
+                    label: '⭐ Step 2: Play Tier 1 (Rainbow Guide)',
+                    sub: 'Practice with rainbow helper colors to earn your 1st Star!',
                     onClick: () => onStartGame(modalWorld, 'piano'),
                     gradient: 'from-fuchsia-600 to-purple-600',
                   }
+                : maxModeStars === 1
+                ? {
+                    label: '⭐⭐ Step 2: Play Tier 2 (Sight Reader)',
+                    sub: 'Read real black-and-white notes to earn 2 Stars & unlock the Boss Song!',
+                    onClick: () => onStartGame(modalWorld, 'piano'),
+                    gradient: 'from-indigo-600 to-purple-600',
+                  }
                 : !prog.bossCleared
                 ? {
-                    label: `👑 Play Song: ${modalWorld.bossMelody.title}!`,
+                    label: `👑 Step 3: Play Song (${modalWorld.bossMelody.title})!`,
+                    sub: 'Play the World Finale song to unlock the next World!',
                     onClick: () => onStartBoss(modalWorld),
                     gradient: 'from-amber-500 to-orange-500',
                   }
                 : {
-                    label: '🎹 Play Piano Again!',
+                    label: '⭐⭐⭐ Play Again (Master Mode)!',
+                    sub: 'Replay anytime to earn more Sparkles!',
                     onClick: () => onStartGame(modalWorld, 'piano'),
                     gradient: 'from-emerald-500 to-teal-600',
                   };
 
               return (
                 <>
+                  {/* Progressive 3-Tier Mastery Ladder Indicator */}
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div
+                      className={`p-2 rounded-xl border-2 text-xs font-black ${
+                        maxModeStars >= 1
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                          : 'bg-pink-50 border-pink-200 text-pink-800'
+                      }`}
+                    >
+                      ⭐ Tier 1: Rainbow
+                    </div>
+                    <div
+                      className={`p-2 rounded-xl border-2 text-xs font-black ${
+                        maxModeStars >= 2
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                          : 'bg-indigo-50 border-indigo-200 text-indigo-800'
+                      }`}
+                    >
+                      ⭐⭐ Tier 2: Black & White
+                    </div>
+                    <div
+                      className={`p-2 rounded-xl border-2 text-xs font-black ${
+                        maxModeStars >= 3
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                          : 'bg-amber-50 border-amber-200 text-amber-800'
+                      }`}
+                    >
+                      ⭐⭐⭐ Tier 3: Master
+                    </div>
+                  </div>
+
                   {/* 1 GIANT PULSING "NEXT STEP" BUTTON */}
                   <button
                     type="button"
                     onClick={primaryAction.onClick}
-                    className={`w-full py-4 px-6 rounded-2xl bg-gradient-to-r ${primaryAction.gradient} text-white font-black text-lg sm:text-xl shadow-lg hover:scale-[1.02] transition flex items-center justify-center gap-2.5 cursor-pointer`}
+                    className={`w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r ${primaryAction.gradient} text-white shadow-lg hover:scale-[1.02] transition flex flex-col items-center justify-center gap-0.5 cursor-pointer`}
                   >
-                    <Play className="w-6 h-6 fill-white" />
-                    <span>{primaryAction.label}</span>
+                    <div className="font-black text-base sm:text-lg flex items-center gap-2">
+                      <Play className="w-5 h-5 fill-white" />
+                      <span>{primaryAction.label}</span>
+                    </div>
+                    <span className="text-xs font-bold text-white/90">
+                      {primaryAction.sub}
+                    </span>
                   </button>
 
-                  {/* 5 Clean Icon Tiles to Replay Any Activity with 1 Word */}
+                  {/* 5 Activity Tiles (Gated sequentially: Story ➔ Practice Modes ➔ Song) */}
                   <div className="grid grid-cols-5 gap-2">
                     {/* 1. Story */}
                     <button
@@ -546,83 +654,110 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
                       className="p-3 rounded-2xl bg-purple-50 hover:bg-purple-100 border-2 border-purple-200 flex flex-col items-center justify-between gap-1.5 cursor-pointer transition"
                     >
                       <BookOpen className="w-6 h-6 text-purple-600" />
-                      <span className="font-black text-xs text-slate-800">Story</span>
+                      <span className="font-black text-xs text-slate-800">1. Story</span>
                       {prog.lessonDone ? (
                         <span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
                           <Check className="w-3.5 h-3.5" />
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold text-purple-600">New</span>
+                        <span className="text-[10px] font-black text-purple-700">Start!</span>
                       )}
                     </button>
 
                     {/* 2. Piano */}
                     <button
                       type="button"
+                      disabled={!gamesUnlocked}
                       onClick={() => onStartGame(modalWorld, 'piano')}
-                      className="p-3 rounded-2xl bg-fuchsia-50 hover:bg-fuchsia-100 border-2 border-fuchsia-200 flex flex-col items-center justify-between gap-1.5 cursor-pointer transition"
+                      className={`p-3 rounded-2xl border-2 flex flex-col items-center justify-between gap-1.5 transition ${
+                        gamesUnlocked
+                          ? 'bg-fuchsia-50 hover:bg-fuchsia-100 border-fuchsia-200 cursor-pointer'
+                          : 'bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed'
+                      }`}
                     >
                       <Piano className="w-6 h-6 text-fuchsia-600" />
                       <span className="font-black text-xs text-slate-800">Piano</span>
-                      <div className="flex gap-0.5">
-                        {[1, 2, 3].map((s) => (
-                          <Star
-                            key={s}
-                            className={`w-3 h-3 ${
-                              s <= prog.piano
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-slate-300 fill-slate-200'
-                            }`}
-                          />
-                        ))}
-                      </div>
+                      {gamesUnlocked ? (
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-3 h-3 ${
+                                s <= prog.piano
+                                  ? 'text-yellow-400 fill-yellow-400'
+                                  : 'text-slate-300 fill-slate-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                      )}
                     </button>
 
                     {/* 3. Bubbles */}
                     <button
                       type="button"
+                      disabled={!gamesUnlocked}
                       onClick={() => onStartGame(modalWorld, 'bubbles')}
-                      className="p-3 rounded-2xl bg-pink-50 hover:bg-pink-100 border-2 border-pink-200 flex flex-col items-center justify-between gap-1.5 cursor-pointer transition"
+                      className={`p-3 rounded-2xl border-2 flex flex-col items-center justify-between gap-1.5 transition ${
+                        gamesUnlocked
+                          ? 'bg-pink-50 hover:bg-pink-100 border-pink-200 cursor-pointer'
+                          : 'bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed'
+                      }`}
                     >
                       <Sparkles className="w-6 h-6 text-pink-600" />
                       <span className="font-black text-xs text-slate-800">Bubbles</span>
-                      <div className="flex gap-0.5">
-                        {[1, 2, 3].map((s) => (
-                          <Star
-                            key={s}
-                            className={`w-3 h-3 ${
-                              s <= prog.bubbles
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-slate-300 fill-slate-200'
-                            }`}
-                          />
-                        ))}
-                      </div>
+                      {gamesUnlocked ? (
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-3 h-3 ${
+                                s <= prog.bubbles
+                                  ? 'text-yellow-400 fill-yellow-400'
+                                  : 'text-slate-300 fill-slate-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                      )}
                     </button>
 
                     {/* 4. Real Piano Mic */}
                     <button
                       type="button"
+                      disabled={!gamesUnlocked}
                       onClick={() => onStartGame(modalWorld, 'mic')}
-                      className="p-3 rounded-2xl bg-cyan-50 hover:bg-cyan-100 border-2 border-cyan-200 flex flex-col items-center justify-between gap-1.5 cursor-pointer transition"
+                      className={`p-3 rounded-2xl border-2 flex flex-col items-center justify-between gap-1.5 transition ${
+                        gamesUnlocked
+                          ? 'bg-cyan-50 hover:bg-cyan-100 border-cyan-200 cursor-pointer'
+                          : 'bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed'
+                      }`}
                     >
                       <Mic className="w-6 h-6 text-cyan-600" />
                       <span className="font-black text-xs text-slate-800">Mic</span>
-                      <div className="flex gap-0.5">
-                        {[1, 2, 3].map((s) => (
-                          <Star
-                            key={s}
-                            className={`w-3 h-3 ${
-                              s <= prog.mic
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-slate-300 fill-slate-200'
-                            }`}
-                          />
-                        ))}
-                      </div>
+                      {gamesUnlocked ? (
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-3 h-3 ${
+                                s <= prog.mic
+                                  ? 'text-yellow-400 fill-yellow-400'
+                                  : 'text-slate-300 fill-slate-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                      )}
                     </button>
 
-                    {/* 5. Boss Song */}
+                    {/* 5. Boss Song (Unlocks at 2⭐⭐ Sight-Reader!) */}
                     <button
                       type="button"
                       disabled={!songUnlocked}
@@ -632,15 +767,20 @@ export const WorldMapView: React.FC<WorldMapViewProps> = ({
                           ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 cursor-pointer'
                           : 'bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed'
                       }`}
+                      title={
+                        songUnlocked
+                          ? 'Play the World Finale Song!'
+                          : 'Earn 2 Stars (⭐⭐ Sight Reader) to unlock the Song!'
+                      }
                     >
                       <Crown className="w-6 h-6 text-amber-500" />
-                      <span className="font-black text-xs text-slate-800">Song</span>
+                      <span className="font-black text-xs text-slate-800">3. Song</span>
                       {prog.bossCleared ? (
                         <span className="text-xs">🏆</span>
                       ) : songUnlocked ? (
                         <span className="text-[10px] font-black text-amber-700">Ready!</span>
                       ) : (
-                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-[10px] font-bold text-slate-500">Need ⭐⭐</span>
                       )}
                     </button>
                   </div>

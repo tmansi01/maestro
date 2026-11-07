@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { ArrowLeft, Music, Play, RotateCcw, Sparkles, Trophy } from 'lucide-react';
 import { WorldDefinition } from '../data/curriculum';
-import { NamingConvention, NoteId, formatNoteDisplayName } from '../data/notes';
+import { ColorMode, NamingConvention, NOTES, NoteId, formatNoteDisplayName } from '../data/notes';
 import { EquippedAccessories } from '../store/useGameStore';
 import { GrandStaffSVG } from '../components/staff/GrandStaffSVG';
 import { MaestroUnicorn } from '../components/mascot/MaestroUnicorn';
@@ -12,6 +12,7 @@ import { speechNarrator } from '../engine/speech';
 
 interface BossConcertViewProps {
   world: WorldDefinition;
+  colorMode: ColorMode;
   namingConvention: NamingConvention;
   equipped: EquippedAccessories;
   onConcertComplete: (pointsEarned: number) => void;
@@ -20,6 +21,7 @@ interface BossConcertViewProps {
 
 export const BossConcertView: React.FC<BossConcertViewProps> = ({
   world,
+  colorMode,
   namingConvention,
   equipped,
   onConcertComplete,
@@ -31,8 +33,9 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
   const [concertDone, setConcertDone] = useState(false);
 
   const currentItem = melody[noteIdx] || melody[0];
+  // Classic black-and-white sheet music for the Boss Concert finale (unless 'always' in Parent Settings or she slips!)
+  const useColors = colorMode === 'always' || mistakeOnStep;
 
-  // Stop speech on unmount (Reads aloud ONLY when she taps 🔊 or makes a mistake!)
   useEffect(() => {
     speechNarrator.stop();
     return () => speechNarrator.stop();
@@ -66,8 +69,9 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
     } else {
       audioEngine.playGentleHintSound();
       setMistakeOnStep(true);
+      const targetNote = NOTES[currentItem.noteId];
       const friendly = formatNoteDisplayName(currentItem.noteId, namingConvention);
-      speechNarrator.speak(`Tap glowing yellow ${friendly}!`);
+      speechNarrator.speak(`${targetNote.landmarkHint.explanation} Tap glowing ${friendly}!`);
     }
   };
 
@@ -79,8 +83,14 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
         </div>
 
         <h2 className="text-2xl sm:text-3xl font-black text-purple-900">
-          🎉 Song Complete!
+          🎉 World {world.id} Complete!
         </h2>
+
+        {world.id < 8 && (
+          <p className="text-sm sm:text-base font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-1.5 rounded-full">
+            🔓 World {world.id + 1} is now unlocked on your Adventure Map!
+          </p>
+        )}
 
         <div className="flex items-center gap-2 bg-fuchsia-100 text-fuchsia-900 px-5 py-2 rounded-2xl font-black text-lg">
           <Sparkles className="w-5 h-5 text-fuchsia-600" />
@@ -115,8 +125,8 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
   const windowNotes = melody.slice(noteIdx, noteIdx + 4).map((m) => m.noteId);
   const friendlyTarget = formatNoteDisplayName(currentItem.noteId, namingConvention);
   const bubbleText = mistakeOnStep
-    ? `💛 Tap glowing ${friendlyTarget}!`
-    : `🎵 Play "${currentItem.lyric}"!`;
+    ? `💡 ${NOTES[currentItem.noteId].landmarkHint.explanation} (Tap ${friendlyTarget}!)`
+    : `🎵 Play "${currentItem.lyric}"! (${noteIdx + 1}/${melody.length})`;
 
   return (
     <div className="flex flex-col gap-2.5 max-w-5xl mx-auto w-full">
@@ -180,17 +190,17 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
             clefMode={world.clef}
             activeNotes={windowNotes}
             targetNote={currentItem.noteId}
-            useColors={true}
-            hintLevel={mistakeOnStep ? 2 : 0}
+            useColors={useColors}
+            hintLevel={mistakeOnStep ? 1 : 0}
             namingConvention={namingConvention}
           />
         </div>
       </div>
 
-      {/* 15-Key Piano Keyboard with Active Clef Context */}
+      {/* Adaptive 1-or-2 Octave Piano Keyboard */}
       <PianoKeyboard
         onSelectNote={handlePianoNote}
-        useColors={true}
+        useColors={useColors}
         namingConvention={namingConvention}
         highlightedNote={mistakeOnStep ? currentItem.noteId : null}
         activeClef={world.clef}

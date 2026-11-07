@@ -105,6 +105,7 @@ export const App: React.FC = () => {
             worldId={screen.world.id}
             clefMode={screen.world.clef}
             notePool={screen.world.notePool}
+            roundLength={screen.world.roundLength}
             initialMode={screen.mode}
             currentModeStars={state.worldStars[screen.world.id]?.[screen.mode] || 0}
             canSpeedChallenge={(state.worldStars[screen.world.id]?.[screen.mode] || 0) >= 3}
@@ -153,6 +154,7 @@ export const App: React.FC = () => {
         {screen.type === 'boss' && (
           <BossConcertView
             world={screen.world}
+            colorMode={state.colorMode}
             namingConvention={state.namingConvention}
             equipped={state.equippedAccessories}
             onConcertComplete={(points) => {

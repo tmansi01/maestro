@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
   Flame,
+  Play,
   RotateCcw,
   Sparkles,
   Star,
@@ -39,6 +40,7 @@ interface GameSessionViewProps {
   worldId?: number;
   clefMode: ClefType;
   notePool: NoteId[];
+  roundLength?: number;
   initialMode: GameMode;
   currentModeStars: number;
   canSpeedChallenge: boolean;
@@ -62,6 +64,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
   title,
   clefMode,
   notePool,
+  roundLength = 10,
   initialMode,
   currentModeStars,
   canSpeedChallenge,
@@ -75,8 +78,18 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
   onBack,
 }) => {
   const [mode, setMode] = useState<GameMode>(initialMode);
+  // Track her current star tier across consecutive rounds so she progresses Tier 1 (⭐) -> Tier 2 (⭐⭐) -> Tier 3 (⭐⭐⭐)
+  const [activeTierStars, setActiveTierStars] = useState<number>(currentModeStars);
+
+  const computeQueueLength = (tierStars: number) =>
+    tierStars >= 2 ? Math.max(12, roundLength) : roundLength;
+
   const [queue, setQueue] = useState<NoteId[]>(() =>
-    generateDynamicNoteQueue(notePool, 10, trickyNotesCount)
+    generateDynamicNoteQueue(
+      notePool,
+      computeQueueLength(currentModeStars),
+      trickyNotesCount
+    )
   );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [mistakeCount, setMistakeCount] = useState<0 | 1 | 2>(0);
@@ -89,7 +102,11 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
   const [speedChallenge, setSpeedChallenge] = useState(false);
   const [micVol, setMicVol] = useState(0);
   const [unicornMessage, setUnicornMessage] = useState(
-    initialMode === 'mic' ? 'Play this note on your piano! 🎤' : 'Which note is this? 🎵'
+    initialMode === 'mic'
+      ? 'Play this note on your piano! 🎤'
+      : currentModeStars === 0
+      ? 'Tier 1: Rainbow Helper! Which note is this? 🌈'
+      : 'Sight-Reader Mode! Count from your Landmark! 🎵'
   );
   const [unicornMood, setUnicornMood] = useState<'happy' | 'excited' | 'encouraging' | 'listening'>(
     initialMode === 'mic' ? 'listening' : 'happy'
@@ -97,12 +114,25 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
   const currentNoteId = queue[currentIndex] || notePool[0] || 'C4';
   const currentNote = NOTES[currentNoteId];
-  const useColors = shouldUseNoteColors(colorMode, currentModeStars, mistakeCount);
+  // Progressive color scaffolding: ON for Tier 1 (0 stars), OFF (classic black-and-white) for Tier 2 & Tier 3!
+  const useColors = shouldUseNoteColors(colorMode, activeTierStars, mistakeCount);
+
+  const tierInfo =
+    activeTierStars === 0
+      ? { badge: '⭐ Tier 1: Rainbow Guide', color: 'bg-pink-100 text-pink-900 border-pink-300' }
+      : activeTierStars === 1
+      ? { badge: '⭐⭐ Tier 2: Sight Reader', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
+      : { badge: '⭐⭐⭐ Tier 3: Master', color: 'bg-amber-100 text-amber-900 border-amber-300' };
 
   const startFreshRound = useCallback(
-    (selectedMode: GameMode, isSpeed = speedChallenge) => {
-      const freshQueue = generateDynamicNoteQueue(notePool, 10, trickyNotesCount);
+    (selectedMode: GameMode, nextTierStars = activeTierStars, isSpeed = speedChallenge) => {
+      const freshQueue = generateDynamicNoteQueue(
+        notePool,
+        computeQueueLength(nextTierStars),
+        trickyNotesCount
+      );
       setMode(selectedMode);
+      setActiveTierStars(nextTierStars);
       setSpeedChallenge(isSpeed);
       setQueue(freshQueue);
       setCurrentIndex(0);
@@ -116,10 +146,12 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
       setUnicornMessage(
         selectedMode === 'mic'
           ? 'Play this note on your piano! 🎤'
-          : 'Which note is this? 🎵'
+          : nextTierStars === 0
+          ? 'Tier 1: Rainbow Helper! Which note is this? 🌈'
+          : 'Sight-Reader Mode! Count from your Landmark! 🎵'
       );
     },
-    [notePool, trickyNotesCount, speedChallenge]
+    [notePool, trickyNotesCount, activeTierStars, speedChallenge, roundLength]
   );
 
   useEffect(() => {
@@ -132,7 +164,10 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
     const nextStreak = wasFirstTry ? streak + 1 : 1;
     audioEngine.playSuccessSparkle(nextStreak);
 
-    const pointsGain = (wasFirstTry ? 15 : 8) + (nextStreak >= 3 ? 10 : 0) + (speedChallenge ? 5 : 0);
+    const pointsGain =
+      (wasFirstTry ? 15 : 8) +
+      (nextStreak >= 3 ? 10 : 0) +
+      (speedChallenge ? 5 : 0);
     const nextPoints = sessionPoints + pointsGain;
     const nextFirstTry = wasFirstTry ? firstTryCount + 1 : firstTryCount;
 
@@ -150,8 +185,21 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
     if (currentIndex + 1 >= queue.length) {
       const accuracy = nextFirstTry / queue.length;
-      const stars = accuracy >= 0.9 ? 3 : accuracy >= 0.75 ? 2 : 1;
-      setEarnedStars(stars);
+      // Progressive 3-Tier Star Award:
+      // - Tier 1 (activeTierStars === 0, Rainbow Colors ON): caps at 1 Star ⭐ so she must play Tier 2 in Black & White!
+      // - Tier 2 (activeTierStars === 1, Black & White): awards 2 Stars ⭐⭐ at >= 75% accuracy (unlocking Boss Song!)
+      // - Tier 3 (activeTierStars >= 2, Black & White 12+ notes): awards 3 Stars ⭐⭐⭐ at >= 85% accuracy!
+      let stars = 1;
+      if (activeTierStars === 0) {
+        stars = 1;
+      } else if (activeTierStars === 1) {
+        stars = accuracy >= 0.75 ? 2 : 1;
+      } else {
+        stars = accuracy >= 0.85 ? 3 : accuracy >= 0.75 ? 2 : 1;
+      }
+
+      const newBestStars = Math.max(activeTierStars, stars);
+      setEarnedStars(newBestStars);
       setIsRoundFinished(true);
       audioEngine.playFanfare();
       confetti({
@@ -177,6 +225,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
     namingConvention,
     currentIndex,
     queue.length,
+    activeTierStars,
     onCompleteRound,
     mode,
     missedNotes,
@@ -194,8 +243,12 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
       if (mistakeCount === 0) {
         // 1st Mistake: Trigger short Landmark Hint + Read aloud + Requeue note 3 questions later!
         setMistakeCount(1);
-        setMissedNotes((prev) => (prev.includes(currentNoteId) ? prev : [...prev, currentNoteId]));
-        setQueue((prevQueue) => requeueMissedNote(prevQueue, currentIndex, currentNoteId));
+        setMissedNotes((prev) =>
+          prev.includes(currentNoteId) ? prev : [...prev, currentNoteId]
+        );
+        setQueue((prevQueue) =>
+          requeueMissedNote(prevQueue, currentIndex, currentNoteId)
+        );
 
         const hintMsg = currentNote.landmarkHint.explanation;
         setUnicornMessage(`💡 ${hintMsg}`);
@@ -229,8 +282,10 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
   };
 
   if (isRoundFinished) {
+    const canUnlockBossNow = earnedStars >= 2 && Boolean(onStartBossConcert);
+
     return (
-      <div className="max-w-xl mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-purple-300 text-center flex flex-col items-center gap-5">
+      <div className="max-w-xl mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-purple-300 text-center flex flex-col items-center gap-4">
         <div className="flex gap-3">
           {[1, 2, 3].map((s) => (
             <Star
@@ -246,11 +301,19 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
         <h2 className="text-2xl sm:text-3xl font-black text-purple-900">
           {earnedStars === 3
-            ? 'Superstar! 3 Stars!'
+            ? 'World Master! 3 Stars! ⭐⭐⭐'
             : earnedStars === 2
-            ? 'Awesome! 2 Stars!'
-            : 'Great Job! 1 Star!'}
+            ? 'Sight-Reader Star! 2 Stars! ⭐⭐'
+            : 'Rainbow Star! 1 Star! ⭐'}
         </h2>
+
+        <p className="text-sm sm:text-base font-bold text-slate-600">
+          {earnedStars === 1
+            ? 'Next up: Tier 2 turns off rainbow colors so you read real sheet music!'
+            : earnedStars === 2
+            ? 'You read real black-and-white notes! The Boss Song is now unlocked!'
+            : 'Amazing! You mastered all 3 tiers in this World!'}
+        </p>
 
         <div className="flex items-center gap-2 bg-fuchsia-100 text-fuchsia-900 px-5 py-2 rounded-2xl font-black text-lg">
           <Sparkles className="w-5 h-5 text-fuchsia-600" />
@@ -258,25 +321,48 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
         </div>
 
         <div className="flex flex-wrap justify-center gap-3 w-full pt-2">
-          <button
-            type="button"
-            onClick={() => startFreshRound(mode, speedChallenge)}
-            className="px-5 py-3.5 rounded-2xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-base flex items-center gap-2 cursor-pointer"
-          >
-            <RotateCcw className="w-5 h-5" />
-            Play Again
-          </button>
+          {/* Primary Progression CTA */}
+          {earnedStars === 1 && (
+            <button
+              type="button"
+              onClick={() => startFreshRound(mode, 1, speedChallenge)}
+              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black text-base shadow-lg hover:scale-105 flex items-center gap-2 cursor-pointer"
+            >
+              <Play className="w-5 h-5 fill-white" />
+              Play Tier 2: Black & White (⭐⭐)
+            </button>
+          )}
 
-          {onStartBossConcert && (
+          {canUnlockBossNow && (
             <button
               type="button"
               onClick={onStartBossConcert}
               className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white font-black text-base shadow-lg hover:scale-105 flex items-center gap-2 cursor-pointer"
             >
               <Trophy className="w-5 h-5" />
-              Play Song!
+              Play Boss Song! 👑
             </button>
           )}
+
+          {earnedStars === 2 && (
+            <button
+              type="button"
+              onClick={() => startFreshRound(mode, 2, speedChallenge)}
+              className="px-5 py-3.5 rounded-2xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-base flex items-center gap-2 cursor-pointer"
+            >
+              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+              Go for 3rd Star (⭐⭐⭐)
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => startFreshRound(mode, earnedStars, speedChallenge)}
+            className="px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-base flex items-center gap-2 cursor-pointer"
+          >
+            <RotateCcw className="w-5 h-5" />
+            Replay
+          </button>
 
           <button
             type="button"
@@ -292,18 +378,26 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
   return (
     <div className="flex flex-col gap-2.5 max-w-5xl mx-auto w-full">
-      {/* Clean, Clutter-Free Top Bar: Map + Visual Dot Trail + Score */}
+      {/* Clean Top Bar: Map + Tier Badge + Visual Dot Trail + Score */}
       <div className="flex items-center justify-between gap-2 bg-white/95 px-4 py-2.5 rounded-2xl shadow-sm border-2 border-purple-200">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-xs sm:text-sm cursor-pointer shrink-0"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Map
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-xs sm:text-sm cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Map
+          </button>
 
-        {/* Visual Dot Progress Trail (Easy for a 7-year-old to scan at a glance!) */}
+          <span
+            className={`hidden sm:inline-flex items-center px-2.5 py-1 rounded-xl border text-xs font-black ${tierInfo.color}`}
+          >
+            {tierInfo.badge}
+          </span>
+        </div>
+
+        {/* Visual Dot Progress Trail */}
         <div className="flex items-center gap-1.5 overflow-x-auto py-1" title={title}>
           {queue.map((_, i) => (
             <span
@@ -324,7 +418,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
           {canSpeedChallenge && (
             <button
               type="button"
-              onClick={() => startFreshRound(mode, !speedChallenge)}
+              onClick={() => startFreshRound(mode, activeTierStars, !speedChallenge)}
               className={`px-2.5 py-1 rounded-xl font-black text-xs flex items-center gap-1 cursor-pointer border ${
                 speedChallenge
                   ? 'bg-yellow-300 border-yellow-500 text-slate-900'
@@ -382,7 +476,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
         </div>
       </div>
 
-      {/* Active Game Input Mode (Mode 1: 15-Key Piano, Mode 2: Bubbles, Mode 3: Real Piano Mic) */}
+      {/* Active Game Input Mode (Mode 1: Adaptive 1-or-2 Octave Piano, Mode 2: Bubbles, Mode 3: Real Piano Mic) */}
       <div className="pt-0.5">
         {mode === 'piano' && (
           <PianoKeyboard
@@ -410,7 +504,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
             namingConvention={namingConvention}
             sensitivity={micSensitivity}
             onVolumeChange={setMicVol}
-            onSwitchModeFallback={() => startFreshRound('piano')}
+            onSwitchModeFallback={() => startFreshRound('piano', activeTierStars)}
           />
         )}
       </div>

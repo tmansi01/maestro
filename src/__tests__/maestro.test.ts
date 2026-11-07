@@ -58,11 +58,22 @@ describe('Maestro Core Music & Curriculum Tests', () => {
     expect(f3Bass).toBeLessThan(c3Bass);
   });
 
-  it('has 8 progressive worlds starting from Middle C landmarks up to the Grand Staff', () => {
+  it('has 8 progressive worlds ordered strictly Treble (W1-4) -> Bass (W5-7) -> Grand Staff (W8)', () => {
     expect(WORLDS).toHaveLength(8);
     expect(WORLDS[0].id).toBe(1);
+    expect(WORLDS[0].clef).toBe('treble');
+    expect(WORLDS[0].notePool).toEqual(['C4', 'D4', 'E4']);
+    expect(WORLDS[1].clef).toBe('treble');
+    expect(WORLDS[2].clef).toBe('treble');
+    expect(WORLDS[3].clef).toBe('treble');
+    expect(WORLDS[3].notePool).toHaveLength(8); // Full Treble C4-C5
+    expect(WORLDS[4].clef).toBe('bass');
+    expect(WORLDS[5].clef).toBe('bass');
+    expect(WORLDS[6].clef).toBe('bass');
+    expect(WORLDS[6].notePool).toHaveLength(8); // Full Bass C3-C4
     expect(WORLDS[7].id).toBe(8);
     expect(WORLDS[7].clef).toBe('grand');
+    expect(WORLDS[7].notePool).toHaveLength(15); // Full Grand Staff C3-C5
   });
 });
 

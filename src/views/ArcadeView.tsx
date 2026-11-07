@@ -87,7 +87,7 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
       }
     }
     const list = ALL_NOTE_IDS.filter((n) => set.has(n));
-    return list.length >= 2 ? list : (['B3', 'C4', 'D4'] as NoteId[]);
+    return list.length >= 2 ? list : (['C4', 'D4', 'E4'] as NoteId[]);
   }, [playerState.unlockedWorld]);
 
   const unlockedClef: ClefType = useMemo(() => {

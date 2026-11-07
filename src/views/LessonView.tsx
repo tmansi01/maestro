@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle2, Sparkles, Volume2 } from 'lucide-react';
 import { WorldDefinition } from '../data/curriculum';
-import { NamingConvention, NoteId, formatNoteDisplayName } from '../data/notes';
+import { NamingConvention, NOTES, NoteId, formatNoteDisplayName } from '../data/notes';
 import { EquippedAccessories } from '../store/useGameStore';
 import { GrandStaffSVG } from '../components/staff/GrandStaffSVG';
 import { MaestroUnicorn } from '../components/mascot/MaestroUnicorn';
@@ -26,14 +26,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
 }) => {
   const [slideIdx, setSlideIdx] = useState(0);
   const [sandboxCleared, setSandboxCleared] = useState(false);
+  const [mistakeMade, setMistakeMade] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
   const slide = world.lessonSlides[slideIdx];
   const activeBubbleText = feedbackMsg || slide.speechText;
+  const isQuiz = Boolean(slide.isQuizSlide);
 
   // Play the target note chime on slide change (Voiceover speaks ONLY when she taps 🔊 or makes a mistake!)
   useEffect(() => {
     setSandboxCleared(!slide.tryItNote);
+    setMistakeMade(false);
     setFeedbackMsg(null);
     speechNarrator.stop();
     if (slide.highlightNotes.length > 0) {
@@ -53,9 +56,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
         const label = formatNoteDisplayName(noteId, namingConvention);
         setFeedbackMsg(`✨ Yay! That is ${label}!`);
       } else {
+        audioEngine.playGentleHintSound();
+        setMistakeMade(true);
+        const targetNote = NOTES[slide.tryItNote];
         const targetLabel = formatNoteDisplayName(slide.tryItNote, namingConvention);
-        const hint = `Tap the glowing yellow key for ${targetLabel}!`;
-        setFeedbackMsg(hint);
+        const hint = `${targetNote.landmarkHint.explanation} Tap glowing ${targetLabel}!`;
+        setFeedbackMsg(`💡 ${hint}`);
         speechNarrator.speak(hint);
       }
     }
@@ -108,7 +114,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
       <div className="flex flex-col md:flex-row items-center gap-3">
         <MaestroUnicorn
           sideDock
-          mood={sandboxCleared ? 'excited' : 'happy'}
+          mood={sandboxCleared ? 'excited' : mistakeMade ? 'encouraging' : 'happy'}
           speechBubble={activeBubbleText}
           onReplaySpeech={() => speechNarrator.speak(activeBubbleText)}
           equipped={equipped}
@@ -119,10 +125,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
             clefMode={slide.clef}
             activeNotes={slide.highlightNotes}
             targetNote={slide.tryItNote}
-            useColors={true}
-            hintLevel={0}
+            useColors={!isQuiz || mistakeMade || sandboxCleared}
+            hintLevel={isQuiz && mistakeMade ? 1 : 0}
             namingConvention={namingConvention}
-            showLabelsOnAll={true}
+            showLabelsOnAll={!isQuiz || mistakeMade || sandboxCleared}
             onNoteClick={(n) => audioEngine.playNote(n)}
           />
           {slide.tryItNote && (
@@ -169,11 +175,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
           )}
           <button
             type="button"
+            disabled={!sandboxCleared}
             onClick={handleNext}
-            className={`px-5 py-2 rounded-xl font-black text-sm sm:text-base shadow-md flex items-center gap-1.5 cursor-pointer transition ${
+            className={`px-5 py-2 rounded-xl font-black text-sm sm:text-base shadow-md flex items-center gap-1.5 transition ${
               sandboxCleared
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white scale-105'
-                : 'bg-purple-200 text-purple-900 hover:bg-purple-300'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white scale-105 cursor-pointer'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
             }`}
           >
             <span>
@@ -184,12 +191,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
         </div>
       </div>
 
-      {/* 15-Key Piano Keyboard with Active Clef Context */}
+      {/* Dynamic 1-or-2 Octave Piano Keyboard (On Quiz Slide, only highlights if she slips!) */}
       <PianoKeyboard
         onSelectNote={handlePianoSelect}
-        useColors={true}
+        useColors={!isQuiz || mistakeMade || sandboxCleared}
         namingConvention={namingConvention}
-        highlightedNote={slide.tryItNote}
+        highlightedNote={!isQuiz || mistakeMade ? slide.tryItNote : null}
         activeClef={slide.clef}
       />
     </div>

@@ -4,18 +4,22 @@ An interactive, progressive note-reading game for a 7-year-old learning piano ac
 
 ## ✨ Key Features
 
-- **8 Progressive Worlds (Landmark Note System)**:
-  1. **The Magic Whisker**: Middle C (`C4`) & stepping up to `D4` and down to `B3` (*Hot Cross Buns*)
-  2. **The Treble Swirl**: Landmark `G4` (line 2) & stepping down to `F4` and `E4` (*Mary Had a Little Lamb*)
-  3. **Climbing the Rainbow**: Upper Treble `A4`, `B4`, and High `C5` (*Twinkle, Twinkle, Little Star*)
-  4. **Treble Clef Champion**: Full Treble octave (`C4–C5`) & `F-A-C-E` space trick (*Ode to Joy*)
-  5. **The Two Magic Dots**: Bass Clef Landmark `F3` (line 4), `G3`, and `A3` (*Row, Row, Row Your Boat*)
-  6. **Deep in the Crystal Cave**: Lower Bass `E3`, `D3`, and Landmark Bass `C3` (*Old MacDonald*)
-  7. **Bass Clef Explorer**: Full Bass octave (`C3–C4`) (*London Bridge*)
-  8. **The Grand Unicorn Concert**: Full Grand Staff combining Treble & Bass Clefs (*Grand Unicorn Symphony*)
-- **Sequential Unlocking + Unlimited Replay of Unlocked Worlds**:
-  - World 1 starts unlocked; Worlds 2–8 unlock sequentially as she clears each World's Boss Melody Concert.
-  - Once unlocked, every World (its Story Lesson, all 3 Game Modes, and Boss Melody Concert) can be replayed infinitely with dynamically generated note queues to reinforce learning.
+- **8 Progressive Worlds Across 3 Chapters (Landmark Note System)**:
+  - **Chapter 1 — Right Hand • Treble Clef (`𝄞`, 1-Octave Keyboard `C4–C5`)**:
+    1. **Magic Whisker**: Landmark Middle C (`C4`) & stepping up to `D4` and `E4` (3 notes • *Hot Cross Buns*)
+    2. **Treble Swirl**: Landmark `G4` (line 2) & cumulative lower treble `C4–G4` (5 notes • *Mary Had a Little Lamb*)
+    3. **Rainbow Climb**: Landmark High `C5` & upper treble `C4, F4–C5` (6 notes • *Twinkle, Twinkle, Little Star*)
+    4. **Right Hand Champ**: Full Treble octave (`C4–C5`) & `F-A-C-E` space trick (8 notes • *Ode to Joy*)
+  - **Chapter 2 — Left Hand • Bass Clef (`𝄢`, 1-Octave Keyboard `C3–C4`)**:
+    5. **Two Magic Dots**: Landmark Bass `F3` (line 4) & cumulative upper bass `F3–C4` (5 notes • *Row, Row, Row Your Boat*)
+    6. **Crystal Cave**: Landmark Low `C3` & lower bass `C3–G3, C4` (6 notes • *Old MacDonald*)
+    7. **Left Hand Hero**: Full Bass octave (`C3–C4`) (8 notes • *London Bridge*)
+  - **Chapter 3 — Both Hands • Grand Staff (`𝄞 + 𝄢`, 2-Octave Keyboard `C3–C5`)**:
+    8. **Grand Concert**: All 5 Landmarks & all 15 notes (`C3–C5`) across Treble & Bass Clefs (*Grand Unicorn Symphony*)
+- **Progressive 3-Tier Star Mastery Within Every World**:
+  - **1️⃣ Lesson + Quick Check**: Interactive story introducing the World's Landmark anchor, ending with an unassisted Quick Check quiz slide.
+  - **2️⃣ Practice (`⭐ Rainbow Guide` ➔ `⭐⭐ Sight Reader` ➔ `⭐⭐⭐ World Master`)**: Round 1 uses rainbow color scaffolding (`⭐`); Round 2 switches to classic black-and-white notes (`⭐⭐`, unlocking the Boss Song); Round 3 challenges her to master the world at $\ge 85\%$ accuracy (`⭐⭐⭐`).
+  - **3️⃣ Boss Song Concert**: Sight-read the World's melody in classic black-and-white sheet music to unlock the next World!
 - **🕹️ Endless Arcade Mode & Hall of Fame Leaderboard**:
   - **Custom Setup**: Pick Treble, Bass, or Grand Staff, toggle any combination of notes (`C3–C5`), and choose any of the 3 input modes.
   - **3 Hearts + Configurable Beat Timer**: Starts at a gentle `20.0s` per note at Level 1 by default (customizable from `8s` to `35s` in **Parent Settings**) and levels up every 6 notes (`-7.5%` per level down to a proportional high-level floor), using classic black-and-white sheet music for genuine sight-reading reinforcement.
