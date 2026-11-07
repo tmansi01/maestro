@@ -24,19 +24,14 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl border-4 border-pink-300 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-purple-900">
-              🦄 Unicorn Boutique & Sticker Book
-            </h2>
-            <p className="text-xs sm:text-sm font-semibold text-slate-500">
-              Use your Sparkle Points from playing and replaying levels!
-            </p>
-          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-purple-900">
+            👑 Dress Up & Stickers
+          </h2>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 bg-fuchsia-100 text-fuchsia-900 px-3.5 py-1.5 rounded-2xl font-black text-sm">
               <Sparkles className="w-4 h-4 text-fuchsia-600" />
-              {playerState.points} Sparkles
+              {playerState.points}
             </div>
             <button
               type="button"
@@ -54,7 +49,7 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
             compact
             mood="excited"
             equipped={playerState.equippedAccessories}
-            speechBubble="Try on my magical hats, glasses, bowties, and wings—or collect stickers for your album!"
+            speechBubble="Try on my hats, glasses, and wings!"
           />
         </div>
 
@@ -86,7 +81,7 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
 
         {/* Items Grid */}
         {tab === 'outfits' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {UNICORN_ACCESSORIES.map((item) => {
               const owned = playerState.unlockedAccessories.includes(item.id);
               const equipped = playerState.equippedAccessories[item.category] === item.id;
@@ -95,27 +90,19 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
               return (
                 <div
                   key={item.id}
-                  className={`p-3.5 rounded-2xl border-2 flex flex-col justify-between gap-2 ${
+                  className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center justify-between gap-2 ${
                     equipped
-                      ? 'bg-purple-50 border-purple-500'
+                      ? 'bg-purple-50 border-purple-500 ring-2 ring-purple-300'
                       : owned
                       ? 'bg-white border-emerald-300'
                       : 'bg-slate-50 border-slate-200'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-3xl">{item.emoji}</span>
-                      <span className="text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
-                        {item.category}
-                      </span>
-                    </div>
-                    <h4 className="font-black text-slate-800 text-sm mt-1.5">
+                  <div className="flex flex-col items-center">
+                    <span className="text-4xl my-1">{item.emoji}</span>
+                    <h4 className="font-black text-slate-800 text-xs sm:text-sm leading-tight">
                       {item.name}
                     </h4>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
-                      {item.description}
-                    </p>
                   </div>
 
                   <button
@@ -131,22 +118,22 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
                         : owned
                         ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                         : canAfford
-                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
+                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-xs'
                         : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     }`}
                   >
                     {equipped
-                      ? '✓ Wearing (Tap to Remove)'
+                      ? '✓ Wearing'
                       : owned
-                      ? 'Put On'
-                      : `Unlock (${item.costPoints} ✨)`}
+                      ? 'Wear'
+                      : `${item.costPoints} ✨`}
                   </button>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {STICKERS.map((st) => {
               const owned = playerState.unlockedStickers.includes(st.id);
               const canAfford = playerState.points >= st.costPoints;
@@ -154,27 +141,26 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
               return (
                 <div
                   key={st.id}
-                  className={`p-3.5 rounded-2xl border-2 flex items-center justify-between gap-3 ${
+                  className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center justify-between gap-2 ${
                     owned ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-center">
                     <div
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl bg-white shadow-xs ${
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center text-4xl bg-white shadow-xs ${
                         !owned ? 'grayscale opacity-50' : ''
                       }`}
                     >
                       {st.emoji}
                     </div>
-                    <div>
-                      <h4 className="font-black text-slate-800 text-sm">{st.name}</h4>
-                      <p className="text-xs text-slate-500 font-medium">{st.description}</p>
-                    </div>
+                    <h4 className="font-black text-slate-800 text-xs sm:text-sm mt-1.5 leading-tight">
+                      {st.name}
+                    </h4>
                   </div>
 
                   {owned ? (
-                    <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-black text-xs flex items-center gap-1 shrink-0">
-                      <Check className="w-4 h-4" /> Collected
+                    <span className="w-full py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Yours!
                     </span>
                   ) : (
                     <button
@@ -184,7 +170,7 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
                         audioEngine.playSuccessSparkle(3);
                         onBuySticker(st.id, st.costPoints);
                       }}
-                      className="px-3.5 py-2 rounded-xl bg-pink-600 text-white font-black text-xs disabled:opacity-40 cursor-pointer shrink-0"
+                      className="w-full py-2 rounded-xl bg-pink-600 text-white font-black text-xs disabled:opacity-40 cursor-pointer"
                     >
                       {st.costPoints} ✨
                     </button>

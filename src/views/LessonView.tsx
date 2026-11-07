@@ -29,14 +29,16 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
   const slide = world.lessonSlides[slideIdx];
+  const activeBubbleText = feedbackMsg || slide.speechText;
 
+  // Play the target note chime on slide change (Voiceover speaks ONLY when she taps 🔊 or makes a mistake!)
   useEffect(() => {
     setSandboxCleared(!slide.tryItNote);
     setFeedbackMsg(null);
-    speechNarrator.speak(slide.speechText);
+    speechNarrator.stop();
     if (slide.highlightNotes.length > 0) {
       const firstNote = slide.highlightNotes[slide.highlightNotes.length - 1];
-      setTimeout(() => audioEngine.playNote(firstNote), 300);
+      setTimeout(() => audioEngine.playNote(firstNote), 250);
     }
     return () => speechNarrator.stop();
   }, [slideIdx, slide]);
@@ -49,12 +51,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
         audioEngine.playSuccessSparkle(2);
         setSandboxCleared(true);
         const label = formatNoteDisplayName(noteId, namingConvention);
-        const msg = `Yay! That is ${label}! You found it!`;
-        setFeedbackMsg(msg);
-        speechNarrator.speak(msg);
+        setFeedbackMsg(`✨ Yay! That is ${label}!`);
       } else {
         const targetLabel = formatNoteDisplayName(slide.tryItNote, namingConvention);
-        setFeedbackMsg(`Almost! Look for the glowing yellow key for ${targetLabel}!`);
+        const hint = `Tap the glowing yellow key for ${targetLabel}!`;
+        setFeedbackMsg(hint);
+        speechNarrator.speak(hint);
       }
     }
   };
@@ -69,32 +71,28 @@ export const LessonView: React.FC<LessonViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between bg-white/90 px-4 py-3 rounded-2xl shadow-sm border-2 border-purple-200">
+    <div className="flex flex-col gap-2.5 max-w-5xl mx-auto w-full">
+      {/* Compact Top Bar */}
+      <div className="flex items-center justify-between bg-white/95 px-4 py-2.5 rounded-2xl shadow-sm border-2 border-purple-200">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold text-sm cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-xs sm:text-sm cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Map
+          Map
         </button>
 
-        <div className="text-center">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-purple-600">
-            World {world.id} Story Lesson • Step {slideIdx + 1} of {world.lessonSlides.length}
-          </span>
-          <h2 className="text-lg sm:text-xl font-black text-slate-800">
-            {slide.title}
-          </h2>
-        </div>
+        <h2 className="text-base sm:text-xl font-black text-slate-800">
+          {world.emoji} {slide.title}
+        </h2>
 
-        <div className="flex gap-1.5">
+        {/* Visual Step Dots */}
+        <div className="flex items-center gap-2">
           {world.lessonSlides.map((_, i) => (
             <span
               key={i}
-              className={`w-3 h-3 rounded-full ${
+              className={`w-3.5 h-3.5 rounded-full transition-transform ${
                 i === slideIdx
                   ? 'bg-purple-600 scale-125'
                   : i < slideIdx
@@ -106,103 +104,94 @@ export const LessonView: React.FC<LessonViewProps> = ({
         </div>
       </div>
 
-      {/* Maestro Unicorn Story Narrator */}
-      <MaestroUnicorn
-        mood={sandboxCleared ? 'excited' : 'happy'}
-        speechBubble={feedbackMsg || slide.speechText}
-        onReplaySpeech={() => speechNarrator.speak(slide.speechText)}
-        equipped={equipped}
-      />
-
-      {/* Interactive Staff Display (Tap any note on the staff to hear it!) */}
-      <div className="relative">
-        <GrandStaffSVG
-          clefMode={slide.clef}
-          activeNotes={slide.highlightNotes}
-          targetNote={slide.tryItNote}
-          useColors={true}
-          hintLevel={0}
-          namingConvention={namingConvention}
-          showLabelsOnAll={true}
-          onNoteClick={(n) => {
-            audioEngine.playNote(n);
-          }}
+      {/* Side-by-Side Mascot Coach + Interactive Music Staff (Zero vertical scroll!) */}
+      <div className="flex flex-col md:flex-row items-center gap-3">
+        <MaestroUnicorn
+          sideDock
+          mood={sandboxCleared ? 'excited' : 'happy'}
+          speechBubble={activeBubbleText}
+          onReplaySpeech={() => speechNarrator.speak(activeBubbleText)}
+          equipped={equipped}
         />
-        <div className="text-center mt-1.5">
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-100 px-3 py-1 rounded-full">
-            <Volume2 className="w-3.5 h-3.5" />
-            Tip: You can tap any note on the staff or piano below to hear it!
-          </span>
-        </div>
-      </div>
 
-      {/* "Try It" Interactive Sandbox Banner */}
-      {slide.tryItNote && (
-        <div
-          className={`flex items-center justify-between px-5 py-3 rounded-2xl border-2 transition-all ${
-            sandboxCleared
-              ? 'bg-emerald-50 border-emerald-400 text-emerald-900'
-              : 'bg-amber-50 border-amber-400 text-amber-900'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            {sandboxCleared ? (
-              <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
-            ) : (
-              <Sparkles className="w-6 h-6 text-amber-600 animate-spin shrink-0" />
-            )}
-            <span className="font-extrabold text-sm sm:text-base">
-              {sandboxCleared
-                ? 'Awesome job! Click Next to continue!'
-                : slide.tryItPrompt}
-            </span>
-          </div>
-
-          {sandboxCleared && (
+        <div className="relative flex-1 w-full">
+          <GrandStaffSVG
+            clefMode={slide.clef}
+            activeNotes={slide.highlightNotes}
+            targetNote={slide.tryItNote}
+            useColors={true}
+            hintLevel={0}
+            namingConvention={namingConvention}
+            showLabelsOnAll={true}
+            onNoteClick={(n) => audioEngine.playNote(n)}
+          />
+          {slide.tryItNote && (
             <button
               type="button"
-              onClick={handleNext}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-sm sm:text-base shadow-md hover:brightness-105 flex items-center gap-2 cursor-pointer animate-bounce"
+              onClick={() => audioEngine.playNote(slide.tryItNote!)}
+              className="absolute top-2.5 right-3 px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 font-black text-xs flex items-center gap-1 shadow-xs cursor-pointer"
             >
-              {slideIdx < world.lessonSlides.length - 1 ? 'Next Step' : 'Finish Lesson!'}
-              <ArrowRight className="w-5 h-5" />
+              <Volume2 className="w-4 h-4" />
+              Hear
             </button>
           )}
         </div>
-      )}
+      </div>
 
-      {/* Interactive Piano Sandbox */}
+      {/* Compact Action Strip: Prompt on Left + Next Button on Right */}
+      <div
+        className={`flex items-center justify-between gap-3 px-4 py-2 rounded-2xl border-2 transition-all ${
+          sandboxCleared
+            ? 'bg-emerald-50 border-emerald-400 text-emerald-900'
+            : 'bg-amber-50 border-amber-400 text-amber-900'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          {sandboxCleared ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          ) : (
+            <Sparkles className="w-5 h-5 text-amber-600 animate-spin shrink-0" />
+          )}
+          <span className="font-black text-xs sm:text-base">
+            {sandboxCleared ? 'Great job! Tap Next!' : slide.tryItPrompt}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {slideIdx > 0 && (
+            <button
+              type="button"
+              onClick={() => setSlideIdx((i) => Math.max(0, i - 1))}
+              className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold text-xs cursor-pointer"
+            >
+              Back
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleNext}
+            className={`px-5 py-2 rounded-xl font-black text-sm sm:text-base shadow-md flex items-center gap-1.5 cursor-pointer transition ${
+              sandboxCleared
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white scale-105'
+                : 'bg-purple-200 text-purple-900 hover:bg-purple-300'
+            }`}
+          >
+            <span>
+              {slideIdx < world.lessonSlides.length - 1 ? 'Next' : 'Play Game!'}
+            </span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* 15-Key Piano Keyboard with Active Clef Context */}
       <PianoKeyboard
         onSelectNote={handlePianoSelect}
         useColors={true}
         namingConvention={namingConvention}
         highlightedNote={slide.tryItNote}
+        activeClef={slide.clef}
       />
-
-      {/* Bottom Navigation Buttons */}
-      <div className="flex justify-between items-center pt-1">
-        <button
-          type="button"
-          disabled={slideIdx === 0}
-          onClick={() => setSlideIdx((i) => Math.max(0, i - 1))}
-          className="px-4 py-2.5 rounded-xl bg-white border-2 border-purple-200 text-purple-700 font-bold text-sm disabled:opacity-40 cursor-pointer"
-        >
-          Previous
-        </button>
-
-        <button
-          type="button"
-          onClick={handleNext}
-          className={`px-6 py-3 rounded-2xl font-black text-base shadow-lg flex items-center gap-2 cursor-pointer transition ${
-            sandboxCleared
-              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:scale-105'
-              : 'bg-purple-200 text-purple-800 hover:bg-purple-300'
-          }`}
-        >
-          {slideIdx < world.lessonSlides.length - 1 ? 'Next' : 'Start Playing Games!'}
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </div>
     </div>
   );
 };

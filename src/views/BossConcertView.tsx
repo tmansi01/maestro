@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { ArrowLeft, Music, Play, RotateCcw, Sparkles, Trophy } from 'lucide-react';
 import { WorldDefinition } from '../data/curriculum';
-import { NamingConvention, NoteId, formatNoteLabel, NOTES } from '../data/notes';
+import { NamingConvention, NoteId, formatNoteDisplayName } from '../data/notes';
 import { EquippedAccessories } from '../store/useGameStore';
 import { GrandStaffSVG } from '../components/staff/GrandStaffSVG';
 import { MaestroUnicorn } from '../components/mascot/MaestroUnicorn';
@@ -32,12 +32,12 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
 
   const currentItem = melody[noteIdx] || melody[0];
 
+  // Stop speech on unmount (Reads aloud ONLY when she taps 🔊 or makes a mistake!)
   useEffect(() => {
-    speechNarrator.speak(world.bossMelody.introSpeech);
+    speechNarrator.stop();
     return () => speechNarrator.stop();
   }, [world]);
 
-  // Listen to full song demo
   const playFullDemo = () => {
     melody.forEach((m, idx) => {
       setTimeout(() => {
@@ -66,25 +66,26 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
     } else {
       audioEngine.playGentleHintSound();
       setMistakeOnStep(true);
+      const friendly = formatNoteDisplayName(currentItem.noteId, namingConvention);
+      speechNarrator.speak(`Tap glowing yellow ${friendly}!`);
     }
   };
 
   if (concertDone) {
     return (
-      <div className="max-w-2xl mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-amber-300 text-center flex flex-col items-center gap-5">
+      <div className="max-w-xl mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-amber-300 text-center flex flex-col items-center gap-5">
         <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center text-amber-500 shadow-inner">
           <Trophy className="w-12 h-12" />
         </div>
 
         <h2 className="text-2xl sm:text-3xl font-black text-purple-900">
-          🎉 World {world.id} Boss Concert Complete!
+          🎉 Song Complete!
         </h2>
 
-        <p className="text-slate-700 font-semibold text-base">
-          Bravo! You performed <span className="font-black text-pink-600">{world.bossMelody.title}</span> and earned{' '}
-          <span className="font-black text-purple-700">+100 Sparkle Points!</span>
-          {world.id < 8 && ' The next World is now unlocked on your Adventure Map!'}
-        </p>
+        <div className="flex items-center gap-2 bg-fuchsia-100 text-fuchsia-900 px-5 py-2 rounded-2xl font-black text-lg">
+          <Sparkles className="w-5 h-5 text-fuchsia-600" />
+          +100 Sparkles!
+        </div>
 
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <button
@@ -93,7 +94,7 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
               setNoteIdx(0);
               setConcertDone(false);
             }}
-            className="px-5 py-3 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-black flex items-center gap-2 cursor-pointer"
+            className="px-5 py-3.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-black flex items-center gap-2 cursor-pointer"
           >
             <RotateCcw className="w-5 h-5" />
             Play Song Again
@@ -102,72 +103,60 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
           <button
             type="button"
             onClick={onBack}
-            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black shadow-lg cursor-pointer"
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black shadow-lg cursor-pointer"
           >
-            Continue to World Map
+            Back to Map
           </button>
         </div>
       </div>
     );
   }
 
-  // Show a window of up to 4 upcoming notes on the staff so it looks like real sheet music!
   const windowNotes = melody.slice(noteIdx, noteIdx + 4).map((m) => m.noteId);
+  const friendlyTarget = formatNoteDisplayName(currentItem.noteId, namingConvention);
+  const bubbleText = mistakeOnStep
+    ? `💛 Tap glowing ${friendlyTarget}!`
+    : `🎵 Play "${currentItem.lyric}"!`;
 
   return (
-    <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white px-5 py-3 rounded-2xl shadow-md">
+    <div className="flex flex-col gap-2.5 max-w-5xl mx-auto w-full">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white px-4 py-2.5 rounded-2xl shadow-md">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 font-bold text-xs sm:text-sm cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 font-black text-xs sm:text-sm cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back
+          Map
         </button>
 
-        <div className="text-center">
-          <span className="text-xs font-extrabold uppercase tracking-wider opacity-90 flex items-center justify-center gap-1">
-            <Sparkles className="w-3.5 h-3.5" />
-            World {world.id} Boss Melody Concert
-          </span>
-          <h2 className="text-lg sm:text-xl font-black">{world.bossMelody.title}</h2>
-        </div>
+        <h2 className="text-base sm:text-xl font-black flex items-center gap-1.5">
+          <span>👑</span>
+          <span>{world.bossMelody.title}</span>
+        </h2>
 
         <button
           type="button"
           onClick={playFullDemo}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-orange-600 font-black text-xs sm:text-sm shadow-xs hover:scale-105 transition cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-orange-600 font-black text-xs sm:text-sm shadow-xs hover:scale-105 transition cursor-pointer"
         >
           <Play className="w-4 h-4 fill-orange-600" />
-          Listen to Song
+          Listen
         </button>
       </div>
 
-      {/* Maestro Unicorn */}
-      <MaestroUnicorn
-        compact
-        mood={mistakeOnStep ? 'encouraging' : 'excited'}
-        speechBubble={
-          mistakeOnStep
-            ? `Hint: Look for ${formatNoteLabel(NOTES[currentItem.noteId].letter, namingConvention)} (${currentItem.noteId}) glowing in yellow on the piano!`
-            : `Play the first note on the left for "${currentItem.lyric}"! (${noteIdx + 1} of ${melody.length})`
-        }
-        equipped={equipped}
-      />
-
       {/* Lyrics Ribbon */}
-      <div className="flex flex-wrap items-center justify-center gap-2 bg-white/90 px-4 py-2.5 rounded-2xl border-2 border-amber-200">
+      <div className="flex flex-wrap items-center justify-center gap-1.5 bg-white/90 px-3 py-2 rounded-2xl border-2 border-amber-200">
         <Music className="w-4 h-4 text-amber-600" />
         {melody.map((m, i) => (
           <span
             key={i}
-            className={`px-2.5 py-1 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${
+            className={`px-2 py-0.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${
               i === noteIdx
                 ? 'bg-amber-400 text-slate-900 scale-110 shadow-xs'
                 : i < noteIdx
-                ? 'bg-emerald-100 text-emerald-700 line-through opacity-70'
+                ? 'bg-emerald-100 text-emerald-700 opacity-60'
                 : 'bg-slate-100 text-slate-500'
             }`}
           >
@@ -176,22 +165,35 @@ export const BossConcertView: React.FC<BossConcertViewProps> = ({
         ))}
       </div>
 
-      {/* Staff showing 4-note scrolling window */}
-      <GrandStaffSVG
-        clefMode={world.clef}
-        activeNotes={windowNotes}
-        targetNote={currentItem.noteId}
-        useColors={true}
-        hintLevel={mistakeOnStep ? 2 : 0}
-        namingConvention={namingConvention}
-      />
+      {/* Side-by-Side Mascot Coach + 4-Note Scrolling Staff (Zero vertical scroll!) */}
+      <div className="flex flex-col md:flex-row items-center gap-3">
+        <MaestroUnicorn
+          sideDock
+          mood={mistakeOnStep ? 'encouraging' : 'excited'}
+          speechBubble={bubbleText}
+          onReplaySpeech={() => speechNarrator.speak(bubbleText)}
+          equipped={equipped}
+        />
 
-      {/* Piano Keyboard */}
+        <div className="flex-1 w-full">
+          <GrandStaffSVG
+            clefMode={world.clef}
+            activeNotes={windowNotes}
+            targetNote={currentItem.noteId}
+            useColors={true}
+            hintLevel={mistakeOnStep ? 2 : 0}
+            namingConvention={namingConvention}
+          />
+        </div>
+      </div>
+
+      {/* 15-Key Piano Keyboard with Active Clef Context */}
       <PianoKeyboard
         onSelectNote={handlePianoNote}
         useColors={true}
         namingConvention={namingConvention}
         highlightedNote={mistakeOnStep ? currentItem.noteId : null}
+        activeClef={world.clef}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { WorldDefinition } from './data/curriculum';
 import { FreePracticeConfig, GameMode, useGameStore } from './store/useGameStore';
+import { HomeHubView } from './views/HomeHubView';
 import { WorldMapView } from './views/WorldMapView';
 import { LessonView } from './views/LessonView';
 import { GameSessionView } from './views/GameSessionView';
@@ -13,7 +14,8 @@ import { speechNarrator } from './engine/speech';
 import { isFireTablet } from './engine/platform';
 
 type ActiveScreen =
-  | { type: 'map' }
+  | { type: 'home' }
+  | { type: 'map'; freePractice?: boolean }
   | { type: 'lesson'; world: WorldDefinition }
   | { type: 'game'; world: WorldDefinition; mode: GameMode }
   | { type: 'free-practice'; config: FreePracticeConfig }
@@ -37,7 +39,7 @@ export const App: React.FC = () => {
     applySyncCode,
   } = useGameStore();
 
-  const [screen, setScreen] = useState<ActiveScreen>({ type: 'map' });
+  const [screen, setScreen] = useState<ActiveScreen>({ type: 'home' });
   const [showBoutique, setShowBoutique] = useState(false);
   const [showParentSettings, setShowParentSettings] = useState(false);
 
@@ -54,21 +56,33 @@ export const App: React.FC = () => {
   return (
     <div
       onClick={() => audioEngine.unlock()}
-      className={`min-h-screen w-full bg-gradient-to-br from-fuchsia-50 via-purple-50 to-indigo-100 flex flex-col justify-between ${
-        fireDevice ? 'p-5 sm:p-7' : 'p-3 sm:p-5'
+      className={`min-h-dvh w-full bg-gradient-to-br from-fuchsia-50 via-purple-50 to-indigo-100 flex flex-col justify-center ${
+        fireDevice ? 'p-3.5 sm:p-5' : 'p-2.5 sm:p-4'
       }`}
     >
       <main className="flex-1 flex flex-col justify-center">
+        {screen.type === 'home' && (
+          <HomeHubView
+            playerState={state}
+            onOpenAdventure={() => setScreen({ type: 'map', freePractice: false })}
+            onOpenArcade={() => setScreen({ type: 'arcade' })}
+            onOpenBoutique={() => setShowBoutique(true)}
+            onOpenFreePractice={() => setScreen({ type: 'map', freePractice: true })}
+            onOpenParentSettings={() => setShowParentSettings(true)}
+          />
+        )}
+
         {screen.type === 'map' && (
           <WorldMapView
+            key={screen.freePractice ? 'fp' : 'worlds'}
             playerState={state}
+            initialShowFreePractice={Boolean(screen.freePractice)}
             onStartLesson={(world) => setScreen({ type: 'lesson', world })}
             onStartGame={(world, mode) => setScreen({ type: 'game', world, mode })}
             onStartBoss={(world) => setScreen({ type: 'boss', world })}
             onStartFreePractice={(config) => setScreen({ type: 'free-practice', config })}
-            onOpenArcade={() => setScreen({ type: 'arcade' })}
             onOpenBoutique={() => setShowBoutique(true)}
-            onOpenParentSettings={() => setShowParentSettings(true)}
+            onBackHome={() => setScreen({ type: 'home' })}
           />
         )}
 
@@ -81,7 +95,7 @@ export const App: React.FC = () => {
               completeLesson(screen.world.id);
               setScreen({ type: 'game', world: screen.world, mode: 'piano' });
             }}
-            onBack={() => setScreen({ type: 'map' })}
+            onBack={() => setScreen({ type: 'map', freePractice: false })}
           />
         )}
 
@@ -103,13 +117,13 @@ export const App: React.FC = () => {
               recordGameResult(screen.world.id, mode, stars, points, missedNotes, wasSpeed);
             }}
             onStartBossConcert={() => setScreen({ type: 'boss', world: screen.world })}
-            onBack={() => setScreen({ type: 'map' })}
+            onBack={() => setScreen({ type: 'map', freePractice: false })}
           />
         )}
 
         {screen.type === 'free-practice' && (
           <GameSessionView
-            title="Relaxed Free Practice"
+            title="Free Practice"
             clefMode={screen.config.clef}
             notePool={screen.config.selectedNotes}
             initialMode={screen.config.mode}
@@ -123,7 +137,7 @@ export const App: React.FC = () => {
             onCompleteRound={(mode, stars, points, missedNotes, wasSpeed) => {
               recordGameResult(1, mode, Math.min(1, stars), points, missedNotes, wasSpeed);
             }}
-            onBack={() => setScreen({ type: 'map' })}
+            onBack={() => setScreen({ type: 'map', freePractice: true })}
           />
         )}
 
@@ -132,7 +146,7 @@ export const App: React.FC = () => {
             playerState={state}
             onSaveArcadeRun={recordArcadeRun}
             onOpenParentSettings={() => setShowParentSettings(true)}
-            onBack={() => setScreen({ type: 'map' })}
+            onBack={() => setScreen({ type: 'home' })}
           />
         )}
 
@@ -144,7 +158,7 @@ export const App: React.FC = () => {
             onConcertComplete={(points) => {
               completeBossConcert(screen.world.id, points);
             }}
-            onBack={() => setScreen({ type: 'map' })}
+            onBack={() => setScreen({ type: 'map', freePractice: false })}
           />
         )}
       </main>

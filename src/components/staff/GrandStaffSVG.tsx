@@ -103,7 +103,9 @@ export const GrandStaffSVG: React.FC<GrandStaffSVGProps> = ({
     <div className="w-full flex justify-center">
       <svg
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-        className="w-full max-w-2xl h-auto bg-white/95 rounded-3xl shadow-inner border-4 border-purple-200 select-none"
+        className={`w-full max-w-2xl h-auto ${
+          isGrand ? 'max-h-52 sm:max-h-60' : 'max-h-44 sm:max-h-52'
+        } bg-white/95 rounded-3xl shadow-inner border-4 border-purple-200 select-none`}
         role="img"
         aria-label="Musical Staff"
       >

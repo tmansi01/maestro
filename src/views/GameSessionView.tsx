@@ -89,7 +89,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
   const [speedChallenge, setSpeedChallenge] = useState(false);
   const [micVol, setMicVol] = useState(0);
   const [unicornMessage, setUnicornMessage] = useState(
-    'Look at the note on the staff! Find your nearest Landmark note if you need a clue!'
+    initialMode === 'mic' ? 'Play this note on your piano! 🎤' : 'Which note is this? 🎵'
   );
   const [unicornMood, setUnicornMood] = useState<'happy' | 'excited' | 'encouraging' | 'listening'>(
     initialMode === 'mic' ? 'listening' : 'happy'
@@ -115,8 +115,8 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
       setUnicornMood(selectedMode === 'mic' ? 'listening' : 'happy');
       setUnicornMessage(
         selectedMode === 'mic'
-          ? 'Play the note on your real piano! My magic horn is listening!'
-          : 'Can you spot this note on the staff?'
+          ? 'Play this note on your piano! 🎤'
+          : 'Which note is this? 🎵'
       );
     },
     [notePool, trickyNotesCount, speedChallenge]
@@ -143,13 +143,12 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
     const friendlyName = formatNoteDisplayName(currentNoteId, namingConvention);
     if (nextStreak >= 3) {
-      setUnicornMessage(`🌈 ${nextStreak}x Rainbow Streak! Yes, that is ${friendlyName}! (+${pointsGain} pts)`);
+      setUnicornMessage(`🌈 ${nextStreak}x! Yes, ${friendlyName}!`);
     } else {
-      setUnicornMessage(`✨ Great job! That is ${friendlyName}! (+${pointsGain} pts)`);
+      setUnicornMessage(`✨ Yes! ${friendlyName}!`);
     }
 
     if (currentIndex + 1 >= queue.length) {
-      // Round complete!
       const accuracy = nextFirstTry / queue.length;
       const stars = accuracy >= 0.9 ? 3 : accuracy >= 0.75 ? 2 : 1;
       setEarnedStars(stars);
@@ -166,7 +165,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
         setCurrentIndex((i) => i + 1);
         setMistakeCount(0);
         setUnicornMood(mode === 'mic' ? 'listening' : 'happy');
-      }, 480);
+      }, 450);
     }
   }, [
     currentNoteId,
@@ -193,20 +192,20 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
       setUnicornMood('encouraging');
 
       if (mistakeCount === 0) {
-        // 1st Mistake: Trigger Landmark Hint + Requeue note 3 questions later for Spaced Repetition!
+        // 1st Mistake: Trigger short Landmark Hint + Read aloud + Requeue note 3 questions later!
         setMistakeCount(1);
         setMissedNotes((prev) => (prev.includes(currentNoteId) ? prev : [...prev, currentNoteId]));
         setQueue((prevQueue) => requeueMissedNote(prevQueue, currentIndex, currentNoteId));
 
-        const hintMsg = `Hint: ${currentNote.landmarkHint.explanation}`;
-        setUnicornMessage(hintMsg);
-        speechNarrator.speak(currentNote.landmarkHint.explanation);
+        const hintMsg = currentNote.landmarkHint.explanation;
+        setUnicornMessage(`💡 ${hintMsg}`);
+        speechNarrator.speak(hintMsg);
       } else {
-        // 2nd Mistake: Highlight the exact key/bubble and read the answer aloud so she never gets stuck!
+        // 2nd Mistake: Highlight the exact key/bubble and read the answer aloud!
         setMistakeCount(2);
         const friendlyName = formatNoteDisplayName(currentNoteId, namingConvention);
-        const revealMsg = `Let’s do it together! This note is ${friendlyName}. Tap the glowing yellow button!`;
-        setUnicornMessage(revealMsg);
+        const revealMsg = `Tap glowing yellow ${friendlyName}!`;
+        setUnicornMessage(`💛 ${revealMsg}`);
         speechNarrator.speak(revealMsg);
       }
     },
@@ -231,7 +230,7 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
   if (isRoundFinished) {
     return (
-      <div className="max-w-2xl mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-purple-300 text-center flex flex-col items-center gap-5">
+      <div className="max-w-xl mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-purple-300 text-center flex flex-col items-center gap-5">
         <div className="flex gap-3">
           {[1, 2, 3].map((s) => (
             <Star
@@ -247,47 +246,44 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
 
         <h2 className="text-2xl sm:text-3xl font-black text-purple-900">
           {earnedStars === 3
-            ? 'Unicorn Superstar! 3 Stars!'
+            ? 'Superstar! 3 Stars!'
             : earnedStars === 2
-            ? 'Awesome Job! 2 Stars!'
-            : 'Level Complete! 1 Star!'}
+            ? 'Awesome! 2 Stars!'
+            : 'Great Job! 1 Star!'}
         </h2>
 
-        <p className="text-slate-600 font-semibold text-base">
-          You earned <span className="text-purple-700 font-black">+{sessionPoints} Sparkle Points</span> and got{' '}
-          <span className="text-emerald-600 font-black">
-            {firstTryCount} of {queue.length}
-          </span>{' '}
-          notes on the first try!
-        </p>
+        <div className="flex items-center gap-2 bg-fuchsia-100 text-fuchsia-900 px-5 py-2 rounded-2xl font-black text-lg">
+          <Sparkles className="w-5 h-5 text-fuchsia-600" />
+          +{sessionPoints} Sparkles
+        </div>
 
         <div className="flex flex-wrap justify-center gap-3 w-full pt-2">
           <button
             type="button"
             onClick={() => startFreshRound(mode, speedChallenge)}
-            className="px-5 py-3 rounded-2xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black flex items-center gap-2 cursor-pointer"
+            className="px-5 py-3.5 rounded-2xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-base flex items-center gap-2 cursor-pointer"
           >
             <RotateCcw className="w-5 h-5" />
-            Replay with New Notes
+            Play Again
           </button>
 
           {onStartBossConcert && (
             <button
               type="button"
               onClick={onStartBossConcert}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white font-black shadow-lg hover:scale-105 flex items-center gap-2 cursor-pointer"
+              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white font-black text-base shadow-lg hover:scale-105 flex items-center gap-2 cursor-pointer"
             >
               <Trophy className="w-5 h-5" />
-              Play Boss Melody Concert!
+              Play Song!
             </button>
           )}
 
           <button
             type="button"
             onClick={onBack}
-            className="px-5 py-3 rounded-2xl bg-slate-800 text-white font-bold cursor-pointer"
+            className="px-5 py-3.5 rounded-2xl bg-slate-800 text-white font-black text-base cursor-pointer"
           >
-            Back to World Map
+            Map
           </button>
         </div>
       </div>
@@ -295,90 +291,53 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
   }
 
   return (
-    <div className="flex flex-col gap-3.5 max-w-5xl mx-auto w-full">
-      {/* Top Status & Mode Switcher Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-white/95 px-4 py-2.5 rounded-2xl shadow-sm border-2 border-purple-200">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold text-xs sm:text-sm cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Map
-          </button>
-          <div>
-            <h2 className="font-black text-slate-800 text-sm sm:text-base">{title}</h2>
-            <div className="flex items-center gap-2 text-xs font-bold text-purple-600">
-              <span>
-                Note {currentIndex + 1} of {queue.length}
-              </span>
-              {queue.length > 10 && (
-                <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[11px]">
-                  +Review Bonus
-                </span>
-              )}
-            </div>
-          </div>
+    <div className="flex flex-col gap-2.5 max-w-5xl mx-auto w-full">
+      {/* Clean, Clutter-Free Top Bar: Map + Visual Dot Trail + Score */}
+      <div className="flex items-center justify-between gap-2 bg-white/95 px-4 py-2.5 rounded-2xl shadow-sm border-2 border-purple-200">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-xs sm:text-sm cursor-pointer shrink-0"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Map
+        </button>
+
+        {/* Visual Dot Progress Trail (Easy for a 7-year-old to scan at a glance!) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto py-1" title={title}>
+          {queue.map((_, i) => (
+            <span
+              key={i}
+              className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full transition-all shrink-0 ${
+                i < currentIndex
+                  ? 'bg-emerald-400'
+                  : i === currentIndex
+                  ? 'bg-purple-600 scale-125 ring-2 ring-purple-300'
+                  : 'bg-purple-100'
+              }`}
+            />
+          ))}
         </div>
 
-        {/* 3 Game Mode Tabs */}
-        <div className="flex items-center gap-1.5 bg-purple-50 p-1 rounded-xl border border-purple-200">
-          <button
-            type="button"
-            onClick={() => startFreshRound('piano')}
-            className={`px-3 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm transition cursor-pointer ${
-              mode === 'piano'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'text-purple-800 hover:bg-purple-100'
-            }`}
-          >
-            🎹 Magic Piano
-          </button>
-          <button
-            type="button"
-            onClick={() => startFreshRound('bubbles')}
-            className={`px-3 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm transition cursor-pointer ${
-              mode === 'bubbles'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'text-purple-800 hover:bg-purple-100'
-            }`}
-          >
-            🏷️ Note Bubbles
-          </button>
-          <button
-            type="button"
-            onClick={() => startFreshRound('mic')}
-            className={`px-3 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm transition cursor-pointer ${
-              mode === 'mic'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'text-purple-800 hover:bg-purple-100'
-            }`}
-          >
-            🎤 Real Piano Mic
-          </button>
-        </div>
-
-        {/* Streak, Points & Optional Rainbow Dash Speed Toggle */}
-        <div className="flex items-center gap-2.5">
+        {/* Streak & Points */}
+        <div className="flex items-center gap-2 shrink-0">
           {canSpeedChallenge && (
             <button
               type="button"
               onClick={() => startFreshRound(mode, !speedChallenge)}
-              className={`px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer border ${
+              className={`px-2.5 py-1 rounded-xl font-black text-xs flex items-center gap-1 cursor-pointer border ${
                 speedChallenge
                   ? 'bg-yellow-300 border-yellow-500 text-slate-900'
                   : 'bg-slate-100 border-slate-300 text-slate-600'
               }`}
-              title="Rainbow Dash Speed Mode!"
+              title="Fast Dash Mode!"
             >
               <Zap className="w-3.5 h-3.5" />
-              Dash
             </button>
           )}
 
           {streak >= 2 && (
-            <div className="flex items-center gap-1 bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-black text-xs sm:text-sm animate-bounce">
+            <div className="flex items-center gap-1 bg-orange-100 text-orange-800 px-2.5 py-1 rounded-full font-black text-xs sm:text-sm animate-bounce">
               <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
               {streak}x
             </div>
@@ -391,53 +350,47 @@ export const GameSessionView: React.FC<GameSessionViewProps> = ({
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="w-full h-3 bg-purple-100 rounded-full overflow-hidden border border-purple-200">
-        <div
-          className="h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 transition-all duration-300"
-          style={{ width: `${Math.round(((currentIndex + 1) / queue.length) * 100)}%` }}
+      {/* Side-by-Side Mascot Coach + Music Staff (Zero vertical scroll!) */}
+      <div className="flex flex-col md:flex-row items-center gap-3">
+        <MaestroUnicorn
+          sideDock
+          mood={unicornMood}
+          speechBubble={unicornMessage}
+          onReplaySpeech={() => speechNarrator.speak(unicornMessage)}
+          equipped={equipped}
+          micVolume={micVol}
         />
+
+        <div className="relative flex-1 w-full">
+          <GrandStaffSVG
+            clefMode={clefMode}
+            activeNotes={[currentNoteId]}
+            targetNote={currentNoteId}
+            useColors={useColors}
+            hintLevel={mistakeCount}
+            namingConvention={namingConvention}
+            onNoteClick={(n) => audioEngine.playNote(n)}
+          />
+          <button
+            type="button"
+            onClick={() => audioEngine.playNote(currentNoteId)}
+            className="absolute top-2.5 right-3 px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 font-black text-xs flex items-center gap-1 shadow-xs cursor-pointer"
+          >
+            <Volume2 className="w-4 h-4" />
+            Hear
+          </button>
+        </div>
       </div>
 
-      {/* Maestro Unicorn & Helpful Speech Bubble */}
-      <MaestroUnicorn
-        compact
-        mood={unicornMood}
-        speechBubble={unicornMessage}
-        onReplaySpeech={() => speechNarrator.speak(unicornMessage)}
-        equipped={equipped}
-        micVolume={micVol}
-      />
-
-      {/* Interactive Music Staff with Progressive Landmark Hints */}
-      <div className="relative">
-        <GrandStaffSVG
-          clefMode={clefMode}
-          activeNotes={[currentNoteId]}
-          targetNote={currentNoteId}
-          useColors={useColors}
-          hintLevel={mistakeCount}
-          namingConvention={namingConvention}
-          onNoteClick={(n) => audioEngine.playNote(n)}
-        />
-        <button
-          type="button"
-          onClick={() => audioEngine.playNote(currentNoteId)}
-          className="absolute top-3 right-4 px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
-        >
-          <Volume2 className="w-4 h-4" />
-          Hear Note
-        </button>
-      </div>
-
-      {/* Active Game Input Mode (Mode 1: Piano, Mode 2: Bubbles, Mode 3: Real Piano Mic) */}
-      <div className="pt-1">
+      {/* Active Game Input Mode (Mode 1: 15-Key Piano, Mode 2: Bubbles, Mode 3: Real Piano Mic) */}
+      <div className="pt-0.5">
         {mode === 'piano' && (
           <PianoKeyboard
             onSelectNote={onPianoSelect}
             useColors={useColors}
             namingConvention={namingConvention}
             highlightedNote={mistakeCount >= 2 ? currentNoteId : null}
+            activeClef={clefMode}
           />
         )}
 

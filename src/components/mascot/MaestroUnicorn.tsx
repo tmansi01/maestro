@@ -8,6 +8,11 @@ interface MaestroUnicornProps {
   onReplaySpeech?: () => void;
   equipped?: EquippedAccessories;
   compact?: boolean;
+  /**
+   * When true on landscape/desktop screens (`md+`), renders Maestro Unicorn + Speech Bubble
+   * as a compact vertical side-card beside the Music Staff so the entire game fits without scrolling!
+   */
+  sideDock?: boolean;
   micVolume?: number;
 }
 
@@ -17,14 +22,29 @@ export const MaestroUnicorn: React.FC<MaestroUnicornProps> = ({
   onReplaySpeech,
   equipped = {},
   compact = false,
+  sideDock = false,
   micVolume = 0,
 }) => {
   const hornGlowScale = mood === 'listening' ? 1 + micVolume * 0.8 : 1;
 
   return (
-    <div className="flex items-center gap-3 sm:gap-4 w-full">
+    <div
+      className={`flex items-center gap-2.5 sm:gap-3 ${
+        sideDock
+          ? 'w-full md:w-56 lg:w-64 md:flex-col md:justify-center md:bg-white/90 md:p-3 md:rounded-3xl md:border-3 md:border-purple-200 md:shadow-sm shrink-0'
+          : 'w-full'
+      }`}
+    >
       {/* Animated Unicorn Avatar */}
-      <div className={`relative shrink-0 ${compact ? 'w-20 h-20' : 'w-24 h-24 sm:w-28 sm:h-28'}`}>
+      <div
+        className={`relative shrink-0 ${
+          sideDock
+            ? 'w-16 h-16 md:w-24 md:h-24'
+            : compact
+            ? 'w-16 h-16 sm:w-20 sm:h-20'
+            : 'w-20 h-20 sm:w-24 sm:h-24'
+        }`}
+      >
         <svg
           viewBox="0 0 160 160"
           className="w-full h-full drop-shadow-md transition-transform duration-300 hover:scale-105"
@@ -201,19 +221,27 @@ export const MaestroUnicorn: React.FC<MaestroUnicornProps> = ({
         </svg>
       </div>
 
-      {/* Speech Bubble with Replay Voice Button (locked height in compact gameplay mode to prevent layout shift) */}
+      {/* Speech Bubble with Tap-to-Hear Voice Button */}
       {speechBubble && (
         <div
-          className={`relative flex-1 bg-white/95 border-3 border-purple-300 rounded-2xl shadow-md ${
-            compact
-              ? 'h-20 px-3.5 py-1.5 flex items-center overflow-hidden'
+          className={`relative flex-1 bg-white/95 border-3 border-purple-300 rounded-2xl shadow-sm ${
+            sideDock
+              ? 'h-16 md:h-24 w-full px-3 py-2 flex items-center justify-between md:flex-col md:justify-center md:text-center overflow-hidden'
+              : compact
+              ? 'h-16 sm:h-20 px-3.5 py-1.5 flex items-center overflow-hidden'
               : 'p-3 sm:p-4'
           }`}
         >
-          <div className="flex items-center justify-between gap-2 w-full">
+          <div
+            className={`flex items-center justify-between gap-2 w-full ${
+              sideDock ? 'md:flex-col md:gap-1.5' : ''
+            }`}
+          >
             <p
-              className={`text-slate-800 font-semibold leading-snug ${
-                compact ? 'text-xs sm:text-sm line-clamp-3' : 'text-sm sm:text-base'
+              className={`text-slate-800 font-black leading-snug ${
+                compact || sideDock
+                  ? 'text-xs sm:text-sm line-clamp-2'
+                  : 'text-sm sm:text-base'
               }`}
             >
               {speechBubble}
@@ -222,11 +250,12 @@ export const MaestroUnicorn: React.FC<MaestroUnicornProps> = ({
               <button
                 type="button"
                 onClick={onReplaySpeech}
-                className="shrink-0 p-2 rounded-xl bg-purple-100 hover:bg-purple-200 active:scale-95 text-purple-700 transition"
-                title="Listen again"
+                className="shrink-0 px-2.5 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 active:scale-95 text-purple-800 font-black text-xs flex items-center gap-1 cursor-pointer transition"
+                title="Tap to hear Maestro read this!"
                 aria-label="Read aloud"
               >
-                <Volume2 className="w-5 h-5" />
+                <Volume2 className="w-4 h-4" />
+                <span>🔊</span>
               </button>
             )}
           </div>

@@ -1,13 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
   Flame,
   Heart,
   Play,
   RotateCcw,
   Settings,
   Shield,
+  SlidersHorizontal,
   Snowflake,
   Sparkles,
   Timer,
@@ -15,6 +18,7 @@ import {
   Volume2,
   Zap,
 } from 'lucide-react';
+import { WORLDS } from '../data/curriculum';
 import {
   ALL_NOTE_IDS,
   ClefType,
@@ -64,6 +68,7 @@ interface ArcadeViewProps {
 }
 
 type ArcadePhase = 'setup' | 'playing' | 'gameover';
+type ArcadePresetId = 'my-notes' | 'treble' | 'bass' | 'grand';
 
 export const ArcadeView: React.FC<ArcadeViewProps> = ({
   playerState,
@@ -73,10 +78,32 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
 }) => {
   const initialSeconds =
     playerState.arcadeInitialSeconds ?? DEFAULT_ARCADE_INITIAL_SECONDS;
-  // Setup configuration state (identical controls to Free Practice)
-  const [clef, setClef] = useState<ClefType>('grand');
-  const [selectedNotes, setSelectedNotes] = useState<NoteId[]>(ALL_NOTE_IDS);
+
+  const unlockedWorldNotes = useMemo(() => {
+    const set = new Set<NoteId>();
+    for (const w of WORLDS) {
+      if (w.id <= playerState.unlockedWorld) {
+        w.notePool.forEach((n) => set.add(n));
+      }
+    }
+    const list = ALL_NOTE_IDS.filter((n) => set.has(n));
+    return list.length >= 2 ? list : (['B3', 'C4', 'D4'] as NoteId[]);
+  }, [playerState.unlockedWorld]);
+
+  const unlockedClef: ClefType = useMemo(() => {
+    const hasBass = unlockedWorldNotes.some((n) => NOTES[n].midi < NOTES.C4.midi);
+    const hasTreble = unlockedWorldNotes.some((n) => NOTES[n].midi > NOTES.C4.midi);
+    if (hasBass && hasTreble) return 'grand';
+    if (hasBass) return 'bass';
+    return 'treble';
+  }, [unlockedWorldNotes]);
+
+  // Setup configuration state (defaults to 1-tap "My Notes" preset from her unlocked worlds!)
+  const [preset, setPreset] = useState<ArcadePresetId>('my-notes');
+  const [clef, setClef] = useState<ClefType>(unlockedClef);
+  const [selectedNotes, setSelectedNotes] = useState<NoteId[]>(unlockedWorldNotes);
   const [mode, setMode] = useState<ArcadeGameMode>('piano');
+  const [showCustomNotes, setShowCustomNotes] = useState(false);
 
   // Active phase
   const [phase, setPhase] = useState<ArcadePhase>('setup');
@@ -115,9 +142,7 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
   const [isFlashingMistake, setIsFlashingMistake] = useState(false);
   const [isTransitioningNext, setIsTransitioningNext] = useState(false);
   const [micVol, setMicVol] = useState(0);
-  const [unicornMessage, setUnicornMessage] = useState(
-    'Answer as many notes as you can before the beat timer runs out!'
-  );
+  const [unicornMessage, setUnicornMessage] = useState('Which note is this? 🎵');
   const [unicornMood, setUnicornMood] = useState<'happy' | 'excited' | 'encouraging' | 'listening'>('happy');
 
   // Game Over / Leaderboard submission state
@@ -187,6 +212,32 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
     []
   );
 
+  const applyArcadePreset = (presetId: ArcadePresetId) => {
+    setPreset(presetId);
+    if (presetId === 'my-notes') {
+      setClef(unlockedClef);
+      setSelectedNotes(unlockedWorldNotes);
+    } else if (presetId === 'treble') {
+      setClef('treble');
+      setSelectedNotes(['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5']);
+    } else if (presetId === 'bass') {
+      setClef('bass');
+      setSelectedNotes(['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4']);
+    } else {
+      setClef('grand');
+      setSelectedNotes(ALL_NOTE_IDS);
+    }
+  };
+
+  const getNoteLandmarkBadge = (nId: NoteId) => {
+    if (nId === 'C4') return '🦄';
+    if (nId === 'G4') return '🌀';
+    if (nId === 'F3') return '••';
+    if (nId === 'C5') return '⭐';
+    if (nId === 'C3') return '💎';
+    return '';
+  };
+
   const toggleNoteSelection = (noteId: NoteId) => {
     setSelectedNotes((prev) => {
       if (prev.includes(noteId)) {
@@ -227,9 +278,7 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
     setRunSaved(false);
     setUnicornMood(mode === 'mic' ? 'listening' : 'happy');
     setUnicornMessage(
-      mode === 'mic'
-        ? 'Arcade Go! Play each note on your real piano before the timer runs out!'
-        : 'Arcade Go! Spot each note before the timer bar runs out!'
+      mode === 'mic' ? 'Play this note! 🎤' : 'Which note is this? 🎵'
     );
     setPhase('playing');
   };
@@ -297,18 +346,18 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
         setHasShield(false);
         audioEngine.playShieldPop();
         setUnicornMood('encouraging');
-        setUnicornMessage(
-          `🛡️ Shield saved your heart! Look closely: this is ${friendlyName} (${currentNote.landmarkHint.explanation})`
-        );
+        const msg = `🛡️ Saved! This is ${friendlyName}!`;
+        setUnicornMessage(msg);
+        speechNarrator.speak(`Shield saved you! This is ${friendlyName}. ${currentNote.landmarkHint.explanation}`);
       } else {
         nextLives = lives - 1;
         setLives(nextLives);
         audioEngine.playGentleHintSound();
         setUnicornMood('encouraging');
-        const prefix = reason === 'timeout' ? '⏰ Time’s up!' : '💡 Let’s check!';
-        setUnicornMessage(
-          `${prefix} This is ${friendlyName}! ${currentNote.landmarkHint.explanation}`
-        );
+        const prefix = reason === 'timeout' ? '⏰ Time’s up!' : '💡 Look:';
+        const msg = `${prefix} ${friendlyName}! (${currentNote.landmarkHint.explanation})`;
+        setUnicornMessage(msg);
+        speechNarrator.speak(`This is ${friendlyName}. ${currentNote.landmarkHint.explanation}`);
       }
 
       // 2-Second Pause & Learn Flash before continuing (or Game Over if 0 hearts left)
@@ -418,7 +467,7 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
     if (feverNotesLeft > 0) setFeverNotesLeft((n) => Math.max(0, n - 1));
 
     const friendlyName = formatNoteDisplayName(currentNoteId, playerState.namingConvention);
-    let message = `✨ Nice! That is ${friendlyName}! Keep your eyes on the staff!`;
+    let message = `✨ Yes! ${friendlyName}!`;
 
     // Roll Mystery Golden Note Reward!
     if (isMysteryNote) {
@@ -629,180 +678,177 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
   );
 
   // ============================================================================
-  // PHASE 1: ARCADE SETUP & HALL OF FAME HUB
+  // PHASE 1: 1-TAP ARCADE LAUNCHPAD & HALL OF FAME HUB
   // ============================================================================
   if (phase === 'setup') {
     return (
-      <div className="flex flex-col gap-5 max-w-6xl mx-auto w-full">
-        {/* Top Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white px-5 py-4 rounded-3xl shadow-lg">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/20 hover:bg-white/30 font-bold text-xs sm:text-sm cursor-pointer transition"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              World Map
-            </button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black flex items-center gap-2">
-                🕹️ Endless Arcade Challenge
-              </h1>
-              <p className="text-xs sm:text-sm text-white/90 font-semibold">
-                3 Hearts ❤️ • Starts at {initialSeconds}s/note ⏱️ • Golden Mystery Power-Ups ✨
-              </p>
-            </div>
+      <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full">
+        {/* Clean Top Bar */}
+        <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white px-4 sm:px-5 py-3 rounded-3xl shadow-md">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/20 hover:bg-white/30 font-black text-xs sm:text-sm cursor-pointer transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Home
+          </button>
+
+          <div className="text-center">
+            <h1 className="text-lg sm:text-2xl font-black">
+              🕹️ Arcade
+            </h1>
+            <p className="text-[11px] sm:text-xs text-white/90 font-bold">
+              ❤️❤️❤️ • {initialSeconds}s Timer
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-2xl font-black text-sm">
-              <Sparkles className="w-4 h-4 text-yellow-300" />
-              {playerState.points} Sparkles
-            </div>
-            <button
-              type="button"
-              onClick={onOpenParentSettings}
-              title="Parent Settings (Timer, Notes & Sync)"
-              aria-label="Parent Settings"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white/20 hover:bg-white/30 font-bold text-xs sm:text-sm cursor-pointer transition"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Timer / Parents</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onOpenParentSettings}
+            title="Parent Settings (Timer, Notes & Sync)"
+            aria-label="Parent Settings"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white/20 hover:bg-white/30 font-bold text-xs sm:text-sm cursor-pointer transition"
+          >
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline">{initialSeconds}s</span>
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left 7 Cols: Identical Note/Clef/Mode Picker to Free Practice */}
-          <div className="lg:col-span-7 bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl border-4 border-purple-300 flex flex-col gap-5">
-            <div>
-              <h2 className="text-lg sm:text-xl font-black text-slate-800">
-                🎯 Configure Your Arcade Run
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 font-medium mt-0.5">
-                Pick your Clef, toggle the notes you want to reinforce (at least 2 notes), and beat the Hall of Fame!
-              </p>
-            </div>
-
-            {/* 1. Choose Clef / Preset */}
-            <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">
-                1. Choose Clef Preset
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    {
-                      id: 'treble' as const,
-                      label: '𝄞 Treble Clef (C4–C5)',
-                      notes: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'] as NoteId[],
-                    },
-                    {
-                      id: 'bass' as const,
-                      label: '𝄢 Bass Clef (C3–C4)',
-                      notes: ['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4'] as NoteId[],
-                    },
-                    {
-                      id: 'grand' as const,
-                      label: '🌟 Grand Staff (All 15 Notes)',
-                      notes: ALL_NOTE_IDS,
-                    },
-                  ]
-                ).map((preset) => (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
+          {/* Left 7 Cols: 1-Tap Visual Preset Cards + Big Play Button */}
+          <div className="lg:col-span-7 bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl border-4 border-purple-300 flex flex-col gap-4">
+            {/* 1. 4 Big Visual Preset Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              {(
+                [
+                  {
+                    id: 'my-notes' as const,
+                    emoji: '⭐',
+                    title: 'My Notes',
+                    sub: `World 1–${playerState.unlockedWorld}`,
+                  },
+                  {
+                    id: 'treble' as const,
+                    emoji: '✋',
+                    title: 'Right Hand',
+                    sub: 'Treble 𝄞',
+                  },
+                  {
+                    id: 'bass' as const,
+                    emoji: '🤚',
+                    title: 'Left Hand',
+                    sub: 'Bass 𝄢',
+                  },
+                  {
+                    id: 'grand' as const,
+                    emoji: '👑',
+                    title: 'Both Hands',
+                    sub: 'All Notes',
+                  },
+                ]
+              ).map((card) => {
+                const active = preset === card.id;
+                return (
                   <button
-                    key={preset.id}
+                    key={card.id}
                     type="button"
-                    onClick={() => {
-                      setClef(preset.id);
-                      setSelectedNotes(preset.notes);
-                    }}
-                    className={`px-4 py-2.5 rounded-2xl font-black text-xs sm:text-sm border-2 cursor-pointer transition ${
-                      clef === preset.id
-                        ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    onClick={() => applyArcadePreset(card.id)}
+                    className={`p-4 rounded-2xl border-3 flex flex-col items-center text-center gap-1 transition cursor-pointer ${
+                      active
+                        ? 'bg-purple-600 text-white border-purple-800 shadow-md scale-[1.02]'
+                        : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-purple-300'
                     }`}
                   >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 2. Toggle Individual Notes */}
-            <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">
-                2. Pick Notes to Include ({selectedNotes.length} selected • min 2)
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {ALL_NOTE_IDS.map((nId) => {
-                  const n = NOTES[nId];
-                  const active = selectedNotes.includes(nId);
-                  return (
-                    <button
-                      key={nId}
-                      type="button"
-                      onClick={() => toggleNoteSelection(nId)}
-                      style={{
-                        backgroundColor: active ? n.color : '#f8fafc',
-                        color: active ? '#ffffff' : '#475569',
-                        borderColor: active ? n.color : '#cbd5e1',
-                      }}
-                      className="px-3 py-2 rounded-xl font-black text-xs sm:text-sm border-2 cursor-pointer transition hover:scale-105"
+                    <span className="text-3xl sm:text-4xl">{card.emoji}</span>
+                    <span className="font-black text-base">{card.title}</span>
+                    <span
+                      className={`text-xs font-bold ${
+                        active ? 'text-purple-100' : 'text-slate-500'
+                      }`}
                     >
-                      {formatNoteLabel(n.letter, playerState.namingConvention)} ({nId})
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 3. Choose Game Mode */}
-            <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">
-                3. Choose How to Play
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    { id: 'piano' as const, label: '🎹 Magic Piano' },
-                    { id: 'bubbles' as const, label: '🏷️ Note Bubbles' },
-                    { id: 'mic' as const, label: '🎤 Real Piano Mic' },
-                  ]
-                ).map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setMode(m.id)}
-                    className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm cursor-pointer transition ${
-                      mode === m.id
-                        ? 'bg-pink-600 text-white shadow-xs'
-                        : 'bg-pink-50 text-pink-900 hover:bg-pink-100'
-                    }`}
-                  >
-                    {m.label}
+                      {card.sub}
+                    </span>
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
 
-            {/* Mystery Power-Ups Legend + Launch CTA */}
-            <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="text-xs font-bold text-amber-900 space-y-0.5">
-                <div className="font-black text-sm">✨ Catch Golden Mystery Notes!</div>
-                <div>
-                  Randomly win ❤️ Extra Hearts, ❄️ Ice Freeze, 🌈 2x Fever, 🛡️ Shields & 🎁 Sparkle Chests!
-                </div>
-              </div>
+            {/* 2. Mode Pills + Giant Pulsing Play Button */}
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { id: 'piano' as const, emoji: '🎹', label: 'Piano' },
+                  { id: 'bubbles' as const, emoji: '🫧', label: 'Bubbles' },
+                  { id: 'mic' as const, emoji: '🎤', label: 'Mic' },
+                ]
+              ).map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setMode(m.id)}
+                  className={`py-2.5 px-3 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-1.5 cursor-pointer transition ${
+                    mode === m.id
+                      ? 'bg-pink-600 text-white border-pink-700 shadow-xs'
+                      : 'bg-pink-50 text-pink-900 border-pink-200 hover:bg-pink-100'
+                  }`}
+                >
+                  <span className="text-lg">{m.emoji}</span>
+                  <span>{m.label}</span>
+                </button>
+              ))}
+            </div>
 
+            <button
+              type="button"
+              onClick={startArcadeRun}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white font-black text-xl shadow-xl hover:scale-[1.02] flex items-center justify-center gap-2.5 cursor-pointer transition"
+            >
+              <Play className="w-6 h-6 fill-white" />
+              Play Arcade!
+            </button>
+
+            {/* Optional Collapsible Custom Note Picker */}
+            <div className="border-t border-slate-200 pt-2">
               <button
                 type="button"
-                onClick={startArcadeRun}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white font-black text-base shadow-xl hover:scale-105 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                onClick={() => setShowCustomNotes((v) => !v)}
+                className="text-xs font-extrabold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer"
               >
-                <Play className="w-5 h-5 fill-white" />
-                Start Arcade Run!
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Pick Specific Notes ({selectedNotes.length} active)</span>
+                {showCustomNotes ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
               </button>
+
+              {showCustomNotes && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {ALL_NOTE_IDS.map((nId) => {
+                    const n = NOTES[nId];
+                    const active = selectedNotes.includes(nId);
+                    const badge = getNoteLandmarkBadge(nId);
+                    return (
+                      <button
+                        key={nId}
+                        type="button"
+                        onClick={() => toggleNoteSelection(nId)}
+                        style={{
+                          backgroundColor: active ? n.color : '#f8fafc',
+                          color: active ? '#ffffff' : '#475569',
+                          borderColor: active ? n.color : '#cbd5e1',
+                        }}
+                        className="px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm border-2 cursor-pointer transition hover:scale-105"
+                      >
+                        {badge ? `${badge} ` : ''}
+                        {formatNoteLabel(n.letter, playerState.namingConvention)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1082,70 +1128,73 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
         )}
       </div>
 
-      {/* Maestro Unicorn Coach (Fixed h-20 height in compact mode) */}
-      <MaestroUnicorn
-        compact
-        mood={unicornMood}
-        speechBubble={unicornMessage}
-        equipped={playerState.equippedAccessories}
-        micVolume={micVol}
-      />
-
-      {/* Interactive Music Staff + Non-Shifting Floating Arcade Popups! */}
-      <div className="relative">
-        {/* Floating Score / Level-Up / Mystery Power-Up Overlays (Absolute + pointer-events-none = ZERO keyboard shift!) */}
-        <div className="pointer-events-none absolute top-2.5 left-4 right-32 z-20 flex flex-wrap items-center gap-2">
-          {floatingCallout && (
-            <div
-              key={floatingCallout.id}
-              className={`px-3.5 py-1 rounded-full font-black text-xs sm:text-sm shadow-md border-2 transition-all animate-bounce ${
-                floatingCallout.variant === 'levelup'
-                  ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-yellow-300'
-                  : 'bg-emerald-500 text-white border-emerald-200'
-              }`}
-            >
-              {floatingCallout.text}
-            </div>
-          )}
-
-          {activeDropBanner && (
-            <div className="px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 border-2 border-amber-500 text-amber-950 font-black text-xs sm:text-sm shadow-md flex items-center gap-1.5">
-              <span>{activeDropBanner.emoji}</span>
-              <span>
-                {activeDropBanner.title} ({activeDropBanner.description})
-              </span>
-            </div>
-          )}
-        </div>
-
-        <GrandStaffSVG
-          clefMode={clef}
-          activeNotes={[currentNoteId]}
-          targetNote={currentNoteId}
-          useColors={useColors}
-          hintLevel={isFlashingMistake ? 2 : 0}
-          isMysteryNote={isMysteryNote && !isFlashingMistake}
-          namingConvention={playerState.namingConvention}
-          onNoteClick={(n) => audioEngine.playNote(n)}
+      {/* Side-by-Side Mascot Coach + Interactive Music Staff (Zero vertical scroll & zero layout shift!) */}
+      <div className="flex flex-col md:flex-row items-center gap-3">
+        <MaestroUnicorn
+          sideDock
+          mood={unicornMood}
+          speechBubble={unicornMessage}
+          onReplaySpeech={() => speechNarrator.speak(unicornMessage)}
+          equipped={playerState.equippedAccessories}
+          micVolume={micVol}
         />
-        <button
-          type="button"
-          onClick={() => audioEngine.playNote(currentNoteId)}
-          className="absolute top-3 right-4 px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
-        >
-          <Volume2 className="w-4 h-4" />
-          Hear Note
-        </button>
+
+        <div className="relative flex-1 w-full">
+          {/* Floating Score / Level-Up / Mystery Power-Up Overlays (Absolute + pointer-events-none = ZERO keyboard shift!) */}
+          <div className="pointer-events-none absolute top-2.5 left-4 right-28 z-20 flex flex-wrap items-center gap-2">
+            {floatingCallout && (
+              <div
+                key={floatingCallout.id}
+                className={`px-3.5 py-1 rounded-full font-black text-xs sm:text-sm shadow-md border-2 transition-all animate-bounce ${
+                  floatingCallout.variant === 'levelup'
+                    ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-yellow-300'
+                    : 'bg-emerald-500 text-white border-emerald-200'
+                }`}
+              >
+                {floatingCallout.text}
+              </div>
+            )}
+
+            {activeDropBanner && (
+              <div className="px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 border-2 border-amber-500 text-amber-950 font-black text-xs sm:text-sm shadow-md flex items-center gap-1.5">
+                <span>{activeDropBanner.emoji}</span>
+                <span>
+                  {activeDropBanner.title} ({activeDropBanner.description})
+                </span>
+              </div>
+            )}
+          </div>
+
+          <GrandStaffSVG
+            clefMode={clef}
+            activeNotes={[currentNoteId]}
+            targetNote={currentNoteId}
+            useColors={useColors}
+            hintLevel={isFlashingMistake ? 2 : 0}
+            isMysteryNote={isMysteryNote && !isFlashingMistake}
+            namingConvention={playerState.namingConvention}
+            onNoteClick={(n) => audioEngine.playNote(n)}
+          />
+          <button
+            type="button"
+            onClick={() => audioEngine.playNote(currentNoteId)}
+            className="absolute top-2.5 right-3 px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 font-black text-xs flex items-center gap-1 shadow-xs cursor-pointer"
+          >
+            <Volume2 className="w-4 h-4" />
+            Hear
+          </button>
+        </div>
       </div>
 
       {/* Input Controls */}
-      <div className="pt-1">
+      <div className="pt-0.5">
         {mode === 'piano' && (
           <PianoKeyboard
             onSelectNote={onPianoSelect}
             useColors={useColors}
             namingConvention={playerState.namingConvention}
             highlightedNote={isFlashingMistake ? currentNoteId : null}
+            activeClef={clef}
             disabled={isFlashingMistake || isTransitioningNext}
           />
         )}

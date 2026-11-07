@@ -73,7 +73,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'F3',
       stepsDelta: -3,
-      explanation: 'Bass C sits nicely in the 2nd space from the bottom—3 steps down from Landmark F!',
+      explanation: 'Low C! Count 3 steps DOWN from •• F.',
     },
   },
   D3: {
@@ -91,7 +91,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'F3',
       stepsDelta: -2,
-      explanation: 'D is on the middle line of the Bass staff—2 steps (a skip) down from the F dots line!',
+      explanation: 'Middle line D! Count 2 steps DOWN from •• F.',
     },
   },
   E3: {
@@ -109,7 +109,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'F3',
       stepsDelta: -1,
-      explanation: 'E is in the space right below the F line—just 1 step down from Landmark F!',
+      explanation: '1 step DOWN from the •• F line!',
     },
   },
   F3: {
@@ -127,7 +127,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'F3',
       stepsDelta: 0,
-      explanation: 'Landmark Bass F! The two magic dots of the Bass Clef hug this exact line!',
+      explanation: 'Landmark F! Right between the two dots ••!',
     },
   },
   G3: {
@@ -145,7 +145,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'F3',
       stepsDelta: 1,
-      explanation: 'G sits in the top space right above the F line—just 1 step UP from Landmark F!',
+      explanation: '1 step UP from the •• F line!',
     },
   },
   A3: {
@@ -163,7 +163,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'F3',
       stepsDelta: 2,
-      explanation: 'A sits on the very top line of the Bass staff—2 steps UP from Landmark F!',
+      explanation: 'Top line A! Count 2 steps UP from •• F.',
     },
   },
   B3: {
@@ -181,7 +181,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'C4',
       stepsDelta: -1,
-      explanation: 'B sits right on top of the Bass staff—just 1 step DOWN from Middle C!',
+      explanation: '1 step DOWN from 🦄 Middle C!',
     },
   },
   C4: {
@@ -199,7 +199,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'C4',
       stepsDelta: 0,
-      explanation: 'Landmark Middle C! Look for its special little whisker line (ledger line) in the middle!',
+      explanation: '🦄 Middle C! Look for its little whisker line!',
     },
   },
   D4: {
@@ -217,7 +217,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'C4',
       stepsDelta: 1,
-      explanation: 'D hangs right under the bottom line of the Treble staff—1 step UP from Middle C!',
+      explanation: '1 step UP from 🦄 Middle C!',
     },
   },
   E4: {
@@ -235,7 +235,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'G4',
       stepsDelta: -2,
-      explanation: 'E is on the very bottom line of the Treble staff—2 steps down from Landmark G!',
+      explanation: 'Bottom line E! Count 2 steps DOWN from 🌀 G.',
     },
   },
   F4: {
@@ -253,7 +253,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'G4',
       stepsDelta: -1,
-      explanation: 'F sits in the 1st space at the bottom—1 step DOWN from the Treble G swirl line!',
+      explanation: 'Bottom space F! 1 step DOWN from 🌀 G.',
     },
   },
   G4: {
@@ -271,7 +271,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'G4',
       stepsDelta: 0,
-      explanation: 'Landmark Treble G! The curly swirl of the Treble Clef wraps right around this 2nd line!',
+      explanation: 'Landmark G! Inside the curly 🌀 swirl on line 2!',
     },
   },
   A4: {
@@ -289,7 +289,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'G4',
       stepsDelta: 1,
-      explanation: 'A sits in the 2nd space right above the G line—1 step UP from Landmark G!',
+      explanation: '1 step UP from the 🌀 G line!',
     },
   },
   B4: {
@@ -307,7 +307,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'G4',
       stepsDelta: 2,
-      explanation: 'B is on the middle line of the Treble staff—2 steps UP from Landmark G!',
+      explanation: 'Middle line B! Count 2 steps UP from 🌀 G.',
     },
   },
   C5: {
@@ -325,7 +325,7 @@ export const NOTES: Record<NoteId, NoteDefinition> = {
     landmarkHint: {
       nearestLandmark: 'G4',
       stepsDelta: 3,
-      explanation: 'High Treble C! It shines in the 3rd space up—3 steps UP from Landmark G!',
+      explanation: '⭐ High C! Count 3 steps UP from 🌀 G.',
     },
   },
 };
