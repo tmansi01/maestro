@@ -18,7 +18,7 @@ An interactive, progressive note-reading game for a 7-year-old learning piano ac
   - Once unlocked, every World (its Story Lesson, all 3 Game Modes, and Boss Melody Concert) can be replayed infinitely with dynamically generated note queues to reinforce learning.
 - **🕹️ Endless Arcade Mode & Hall of Fame Leaderboard**:
   - **Custom Setup**: Pick Treble, Bass, or Grand Staff, toggle any combination of notes (`C3–C5`), and choose any of the 3 input modes.
-  - **3 Hearts + Progressive Beat Timer**: Starts at `12.0s` per note at Level 1 and levels up every 6 notes (`-1.0s` per level down to a `3.5s` floor), using classic black-and-white sheet music for genuine sight-reading reinforcement.
+  - **3 Hearts + Configurable Beat Timer**: Starts at a gentle `20.0s` per note at Level 1 by default (customizable from `8s` to `35s` in **Parent Settings**) and levels up every 6 notes (`-7.5%` per level down to a proportional high-level floor), using classic black-and-white sheet music for genuine sight-reading reinforcement.
   - **2-Second "Pause & Learn" Flash**: Losing a heart on a mistake or timeout briefly pauses the timer to reveal the Landmark Stepping-Stone Hint + play the true note (and re-queues it 3 turns ahead!).
   - **Mystery Golden Notes (`✨`)**: Randomly drop **❤️ Extra Hearts** (up to 5 max), **❄️ Ice Freeze**, **🌈 2x Rainbow Fever**, **🛡️ Unicorn Shields**, and **🎁 Boutique Sparkle Chests**!
   - **Family & Rival Hall of Fame**: Pre-seeded with 5 Unicorn Rivals, lets family/friends save their name & emoji avatar to the Top 10 Leaderboard, and syncs via `UNI-...` Magic Codes!

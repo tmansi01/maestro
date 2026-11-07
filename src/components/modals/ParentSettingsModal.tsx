@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
-import { Check, Copy, Lock, ShieldCheck, Smartphone, Unlock, X } from 'lucide-react';
+import { Check, Copy, Lock, ShieldCheck, Smartphone, Timer, Unlock, X } from 'lucide-react';
 import { ColorMode, NamingConvention } from '../../data/notes';
+import {
+  DEFAULT_ARCADE_INITIAL_SECONDS,
+  MAX_ARCADE_INITIAL_SECONDS,
+  MIN_ARCADE_INITIAL_SECONDS,
+  getArcadeFloorSeconds,
+} from '../../data/arcade';
 import { PlayerState } from '../../store/useGameStore';
 import { getPlatformLabel } from '../../engine/platform';
 
@@ -16,6 +22,7 @@ interface ParentSettingsModalProps {
         | 'voiceEnabled'
         | 'micSensitivity'
         | 'unlockedWorld'
+        | 'arcadeInitialSeconds'
       >
     >
   ) => void;
@@ -45,6 +52,9 @@ export const ParentSettingsModal: React.FC<ParentSettingsModalProps> = ({
 
   const detectedPlatform = getPlatformLabel();
   const currentSyncCode = getSyncCode();
+  const arcadeSeconds =
+    playerState.arcadeInitialSeconds ?? DEFAULT_ARCADE_INITIAL_SECONDS;
+  const arcadeFloorSeconds = getArcadeFloorSeconds(arcadeSeconds);
 
   const checkMathGate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,7 +189,72 @@ export const ParentSettingsModal: React.FC<ParentSettingsModalProps> = ({
               </div>
             </div>
 
-            {/* 3. Audio, Voice & Unlock Controls */}
+            {/* 3. Arcade Mode Starting Timer (Level 1) */}
+            <div className="bg-indigo-50/70 p-4 rounded-2xl border-2 border-indigo-200 flex flex-col gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-indigo-900 flex items-center gap-1.5">
+                  <Timer className="w-4 h-4 text-indigo-600" />
+                  Arcade Mode Starting Timer (Level 1)
+                </label>
+                <span className="text-xs font-black bg-indigo-600 text-white px-2.5 py-1 rounded-full">
+                  Starts at {arcadeSeconds}s • Speeds up to {arcadeFloorSeconds.toFixed(1)}s max
+                </span>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {(
+                  [
+                    { sec: 30, label: '30s (Relaxed)' },
+                    { sec: 25, label: '25s (Gentle)' },
+                    { sec: 20, label: '20s (Default)' },
+                    { sec: 15, label: '15s (Brisk)' },
+                    { sec: 10, label: '10s (Turbo)' },
+                  ] as const
+                ).map((preset) => (
+                  <button
+                    key={preset.sec}
+                    type="button"
+                    onClick={() =>
+                      onUpdateSettings({ arcadeInitialSeconds: preset.sec })
+                    }
+                    className={`px-2.5 py-2 rounded-xl font-bold text-xs border-2 cursor-pointer transition ${
+                      arcadeSeconds === preset.sec
+                        ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                        : 'bg-white text-slate-700 border-indigo-200 hover:border-indigo-400'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Fine-tune Range Slider */}
+              <div className="flex items-center gap-3 pt-1">
+                <span className="text-xs font-bold text-slate-500 shrink-0">
+                  {MIN_ARCADE_INITIAL_SECONDS}s
+                </span>
+                <input
+                  type="range"
+                  min={MIN_ARCADE_INITIAL_SECONDS}
+                  max={MAX_ARCADE_INITIAL_SECONDS}
+                  step={1}
+                  value={arcadeSeconds}
+                  onChange={(e) =>
+                    onUpdateSettings({
+                      arcadeInitialSeconds: Number(e.target.value),
+                    })
+                  }
+                  aria-label="Arcade Mode Starting Timer in seconds"
+                  className="flex-1 accent-indigo-600 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-slate-500 shrink-0">
+                  {MAX_ARCADE_INITIAL_SECONDS}s
+                </span>
+              </div>
+            </div>
+
+            {/* 4. Audio, Voice & Unlock Controls */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
                 <span className="font-bold text-sm text-slate-700">Voiceover Narrator</span>

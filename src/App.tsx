@@ -131,6 +131,7 @@ export const App: React.FC = () => {
           <ArcadeView
             playerState={state}
             onSaveArcadeRun={recordArcadeRun}
+            onOpenParentSettings={() => setShowParentSettings(true)}
             onBack={() => setScreen({ type: 'map' })}
           />
         )}

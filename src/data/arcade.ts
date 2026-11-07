@@ -40,6 +40,9 @@ export const ARCADE_INITIAL_LIVES = 3;
 export const ARCADE_MAX_LIVES = 5;
 export const ARCADE_NOTES_PER_LEVEL = 6;
 export const ARCADE_PAUSE_LEARN_MS = 2000;
+export const DEFAULT_ARCADE_INITIAL_SECONDS = 20;
+export const MIN_ARCADE_INITIAL_SECONDS = 8;
+export const MAX_ARCADE_INITIAL_SECONDS = 35;
 
 export const ARCADE_AVATARS: string[] = [
   '🦄',
@@ -164,14 +167,42 @@ export function getArcadeLevel(notesCorrect: number): number {
 }
 
 /**
- * Computes the per-note countdown duration in milliseconds for a given Arcade level and mode.
- * Level 1 starts at 12.0s, decreasing by 1.0s per level down to a kid-friendly 3.5s floor.
- * Adds +1.0s acoustic pitch-detection buffer when playing in Real Piano Mic mode.
+ * Computes the fastest high-level floor in seconds for a given Level 1 starting duration.
+ * Scales proportionally to 25% of starting time (rounded to nearest 0.5s, bounded >= 3.5s).
  */
-export function getArcadeTimeLimitMs(level: number, mode: ArcadeGameMode = 'piano'): number {
+export function getArcadeFloorSeconds(
+  initialSeconds = DEFAULT_ARCADE_INITIAL_SECONDS
+): number {
+  const clampedStart = Math.min(
+    MAX_ARCADE_INITIAL_SECONDS,
+    Math.max(MIN_ARCADE_INITIAL_SECONDS, initialSeconds)
+  );
+  return Math.max(3.5, Math.round(clampedStart * 0.25 * 2) / 2);
+}
+
+/**
+ * Computes the per-note countdown duration in milliseconds for a given Arcade level, mode,
+ * and parent-configured Level 1 starting time (defaults to 20s).
+ * Decreases by 7.5% of starting time per level (e.g. -1.5s/level at 20s) down to `getArcadeFloorSeconds`.
+ * Adds +1.5s acoustic pitch-detection buffer when playing in Real Piano Mic mode.
+ */
+export function getArcadeTimeLimitMs(
+  level: number,
+  mode: ArcadeGameMode = 'piano',
+  initialSeconds = DEFAULT_ARCADE_INITIAL_SECONDS
+): number {
   const clampedLevel = Math.max(1, level);
-  const baseSeconds = Math.max(3.5, 12 - (clampedLevel - 1) * 1.0);
-  const micBonusSeconds = mode === 'mic' ? 1.0 : 0;
+  const clampedStart = Math.min(
+    MAX_ARCADE_INITIAL_SECONDS,
+    Math.max(MIN_ARCADE_INITIAL_SECONDS, initialSeconds)
+  );
+  const stepPerLevel = Math.max(0.75, clampedStart * 0.075);
+  const floorSeconds = getArcadeFloorSeconds(clampedStart);
+  const baseSeconds = Math.max(
+    floorSeconds,
+    clampedStart - (clampedLevel - 1) * stepPerLevel
+  );
+  const micBonusSeconds = mode === 'mic' ? 1.5 : 0;
   return Math.round((baseSeconds + micBonusSeconds) * 1000);
 }
 

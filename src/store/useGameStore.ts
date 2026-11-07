@@ -3,6 +3,7 @@ import { ClefType, ColorMode, NamingConvention, NoteId } from '../data/notes';
 import { WORLDS } from '../data/curriculum';
 import {
   ArcadeLeaderboardEntry,
+  DEFAULT_ARCADE_INITIAL_SECONDS,
   DEFAULT_RIVAL_LEADERBOARD,
   insertLeaderboardEntry,
 } from '../data/arcade';
@@ -38,6 +39,7 @@ export interface PlayerState {
   soundEnabled: boolean;
   voiceEnabled: boolean;
   micSensitivity: number; // RMS threshold (default 0.018)
+  arcadeInitialSeconds: number; // Level 1 Arcade timer in seconds (default 20s)
   trickyNotesCount: Partial<Record<NoteId, number>>;
   arcadeLeaderboard: ArcadeLeaderboardEntry[];
   lastArcadePlayerName: string;
@@ -71,6 +73,7 @@ export function createInitialPlayerState(): PlayerState {
     soundEnabled: true,
     voiceEnabled: true,
     micSensitivity: 0.018,
+    arcadeInitialSeconds: DEFAULT_ARCADE_INITIAL_SECONDS,
     trickyNotesCount: {},
     arcadeLeaderboard: [...DEFAULT_RIVAL_LEADERBOARD],
     lastArcadePlayerName: '',
@@ -390,6 +393,7 @@ export function useGameStore() {
           | 'soundEnabled'
           | 'voiceEnabled'
           | 'micSensitivity'
+          | 'arcadeInitialSeconds'
           | 'unlockedWorld'
         >
       >
@@ -418,6 +422,7 @@ export function useGameStore() {
       worldStars: state.worldStars,
       namingConvention: state.namingConvention,
       colorMode: state.colorMode,
+      arcadeInitialSeconds: state.arcadeInitialSeconds,
       arcadeLeaderboard: state.arcadeLeaderboard,
     });
   }, [state]);
@@ -442,6 +447,8 @@ export function useGameStore() {
         worldStars: mergedStars,
         namingConvention: decoded.namingConvention,
         colorMode: decoded.colorMode,
+        arcadeInitialSeconds:
+          decoded.arcadeInitialSeconds ?? prev.arcadeInitialSeconds,
         arcadeLeaderboard: decoded.arcadeLeaderboard || prev.arcadeLeaderboard,
       };
     });

@@ -17,8 +17,10 @@ import {
 import { getNoteStaffY } from '../components/staff/GrandStaffSVG';
 import { detectPitchFromBuffer } from '../engine/pitchDetection';
 import {
+  DEFAULT_ARCADE_INITIAL_SECONDS,
   DEFAULT_RIVAL_LEADERBOARD,
   calculateArcadeNoteScore,
+  getArcadeFloorSeconds,
   getArcadeLevel,
   getArcadeTimeLimitMs,
   insertLeaderboardEntry,
@@ -158,18 +160,31 @@ describe('Cross-Platform Detection, Pitch Detection & Magic Sync Code Tests', ()
 });
 
 describe('Endless Arcade Mode & Leaderboard Tests', () => {
-  it('levels up every 6 notes and scales countdown timer from 12.0s down to a 3.5s floor', () => {
+  it('levels up every 6 notes and scales countdown timer proportionally from 20.0s default (and custom Parent Settings)', () => {
+    expect(DEFAULT_ARCADE_INITIAL_SECONDS).toBe(20);
     expect(getArcadeLevel(0)).toBe(1);
     expect(getArcadeLevel(5)).toBe(1);
     expect(getArcadeLevel(6)).toBe(2);
     expect(getArcadeLevel(12)).toBe(3);
 
-    expect(getArcadeTimeLimitMs(1, 'piano')).toBe(12000);
-    expect(getArcadeTimeLimitMs(2, 'piano')).toBe(11000);
-    expect(getArcadeTimeLimitMs(9, 'piano')).toBe(4000);
-    expect(getArcadeTimeLimitMs(10, 'piano')).toBe(3500);
-    expect(getArcadeTimeLimitMs(20, 'piano')).toBe(3500); // Never drops below 3.5s floor
-    expect(getArcadeTimeLimitMs(1, 'mic')).toBe(13000); // +1.0s buffer for Real Piano Mic
+    // Default 20s start (-1.5s/level down to 5.0s floor)
+    expect(getArcadeFloorSeconds(20)).toBe(5.0);
+    expect(getArcadeTimeLimitMs(1, 'piano')).toBe(20000);
+    expect(getArcadeTimeLimitMs(2, 'piano')).toBe(18500);
+    expect(getArcadeTimeLimitMs(11, 'piano')).toBe(5000);
+    expect(getArcadeTimeLimitMs(20, 'piano')).toBe(5000); // Never drops below proportional floor
+    expect(getArcadeTimeLimitMs(1, 'mic')).toBe(21500); // +1.5s buffer for Real Piano Mic
+
+    // Relaxed 30s Parent Preset (-2.25s/level down to 7.5s floor)
+    expect(getArcadeFloorSeconds(30)).toBe(7.5);
+    expect(getArcadeTimeLimitMs(1, 'piano', 30)).toBe(30000);
+    expect(getArcadeTimeLimitMs(2, 'piano', 30)).toBe(27750);
+    expect(getArcadeTimeLimitMs(20, 'piano', 30)).toBe(7500);
+
+    // Turbo 10s Parent Preset (clamped floor >= 3.5s)
+    expect(getArcadeFloorSeconds(10)).toBe(3.5);
+    expect(getArcadeTimeLimitMs(1, 'piano', 10)).toBe(10000);
+    expect(getArcadeTimeLimitMs(20, 'piano', 10)).toBe(3500);
   });
 
   it('calculates Arcade note scores with time bonus, streak bonus cap, and 2x Rainbow Fever', () => {
@@ -227,11 +242,13 @@ describe('Endless Arcade Mode & Leaderboard Tests', () => {
       worldStars: init.worldStars,
       namingConvention: 'letters',
       colorMode: 'progressive',
+      arcadeInitialSeconds: 25,
       arcadeLeaderboard: updatedBoard,
     });
 
     const decoded = decodeSyncCode(syncCode);
     expect(decoded).not.toBeNull();
+    expect(decoded!.arcadeInitialSeconds).toBe(25);
     expect(decoded!.arcadeLeaderboard).toBeDefined();
     expect(decoded!.arcadeLeaderboard![0].playerName).toBe('Champion 🦄');
     expect(decoded!.arcadeLeaderboard![0].avatar).toBe('👑');

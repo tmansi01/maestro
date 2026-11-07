@@ -6,6 +6,7 @@ import {
   Heart,
   Play,
   RotateCcw,
+  Settings,
   Shield,
   Snowflake,
   Sparkles,
@@ -35,6 +36,7 @@ import {
   ArcadeGameMode,
   ArcadeLeaderboardEntry,
   ArcadePowerUpDefinition,
+  DEFAULT_ARCADE_INITIAL_SECONDS,
   calculateArcadeNoteScore,
   getArcadeLevel,
   getArcadeTimeLimitMs,
@@ -57,6 +59,7 @@ interface ArcadeViewProps {
     missedNotes: NoteId[];
     leaderboardEntry?: Omit<ArcadeLeaderboardEntry, 'id' | 'createdAt'>;
   }) => void;
+  onOpenParentSettings: () => void;
   onBack: () => void;
 }
 
@@ -65,8 +68,11 @@ type ArcadePhase = 'setup' | 'playing' | 'gameover';
 export const ArcadeView: React.FC<ArcadeViewProps> = ({
   playerState,
   onSaveArcadeRun,
+  onOpenParentSettings,
   onBack,
 }) => {
+  const initialSeconds =
+    playerState.arcadeInitialSeconds ?? DEFAULT_ARCADE_INITIAL_SECONDS;
   // Setup configuration state (identical controls to Free Practice)
   const [clef, setClef] = useState<ClefType>('grand');
   const [selectedNotes, setSelectedNotes] = useState<NoteId[]>(ALL_NOTE_IDS);
@@ -100,8 +106,12 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
   const calloutTimerRef = useRef<number | null>(null);
 
   // Timer & Pause-and-Learn Flash state
-  const [timeLimitMs, setTimeLimitMs] = useState(() => getArcadeTimeLimitMs(1, 'piano'));
-  const [remainingMs, setRemainingMs] = useState(() => getArcadeTimeLimitMs(1, 'piano'));
+  const [timeLimitMs, setTimeLimitMs] = useState(() =>
+    getArcadeTimeLimitMs(1, 'piano', initialSeconds)
+  );
+  const [remainingMs, setRemainingMs] = useState(() =>
+    getArcadeTimeLimitMs(1, 'piano', initialSeconds)
+  );
   const [isFlashingMistake, setIsFlashingMistake] = useState(false);
   const [isTransitioningNext, setIsTransitioningNext] = useState(false);
   const [micVol, setMicVol] = useState(0);
@@ -194,7 +204,7 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
     timeoutTriggeredRef.current = false;
 
     const firstNote = pickNextNote(selectedNotes, playerState.trickyNotesCount);
-    const initialLimit = getArcadeTimeLimitMs(1, mode);
+    const initialLimit = getArcadeTimeLimitMs(1, mode, initialSeconds);
 
     setCurrentNoteId(firstNote);
     setIsMysteryNote(false);
@@ -227,7 +237,7 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
   const advanceToNextNote = useCallback(
     (nextCorrectTotal: number, nextStreakVal: number) => {
       const nextLvl = getArcadeLevel(nextCorrectTotal);
-      const nextLimit = getArcadeTimeLimitMs(nextLvl, mode);
+      const nextLimit = getArcadeTimeLimitMs(nextLvl, mode, initialSeconds);
       const nextNote = pickNextNote(selectedNotes, playerState.trickyNotesCount);
       const spawnGolden = shouldSpawnMysteryNote(nextStreakVal + 1);
 
@@ -240,8 +250,17 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
       setIsTransitioningNext(false);
       setUnicornMood(mode === 'mic' ? 'listening' : 'happy');
     },
-    [mode, pickNextNote, selectedNotes, playerState.trickyNotesCount]
+    [mode, initialSeconds, pickNextNote, selectedNotes, playerState.trickyNotesCount]
   );
+
+  // Sync setup preview timer if Parent Settings updates arcadeInitialSeconds while on Setup screen
+  useEffect(() => {
+    if (phase === 'setup') {
+      const updatedLimit = getArcadeTimeLimitMs(1, mode, initialSeconds);
+      setTimeLimitMs(updatedLimit);
+      setRemainingMs(updatedLimit);
+    }
+  }, [phase, mode, initialSeconds]);
 
   // Triggered on wrong note tap OR countdown timeout
   const handleMistakeOrTimeout = useCallback(
@@ -631,14 +650,26 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({
                 🕹️ Endless Arcade Challenge
               </h1>
               <p className="text-xs sm:text-sm text-white/90 font-semibold">
-                3 Hearts ❤️ • Accelerating Beat Timer ⏱️ • Golden Mystery Power-Ups ✨
+                3 Hearts ❤️ • Starts at {initialSeconds}s/note ⏱️ • Golden Mystery Power-Ups ✨
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-2xl font-black text-sm">
-            <Sparkles className="w-4 h-4 text-yellow-300" />
-            {playerState.points} Sparkles
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-2xl font-black text-sm">
+              <Sparkles className="w-4 h-4 text-yellow-300" />
+              {playerState.points} Sparkles
+            </div>
+            <button
+              type="button"
+              onClick={onOpenParentSettings}
+              title="Parent Settings (Timer, Notes & Sync)"
+              aria-label="Parent Settings"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white/20 hover:bg-white/30 font-bold text-xs sm:text-sm cursor-pointer transition"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Timer / Parents</span>
+            </button>
           </div>
         </div>
 

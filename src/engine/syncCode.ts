@@ -2,7 +2,10 @@ import { ClefType, ColorMode, NamingConvention } from '../data/notes';
 import {
   ArcadeGameMode,
   ArcadeLeaderboardEntry,
+  DEFAULT_ARCADE_INITIAL_SECONDS,
   DEFAULT_RIVAL_LEADERBOARD,
+  MAX_ARCADE_INITIAL_SECONDS,
+  MIN_ARCADE_INITIAL_SECONDS,
   insertLeaderboardEntry,
 } from '../data/arcade';
 
@@ -12,6 +15,7 @@ export interface SyncableProgress {
   worldStars: Record<number, { piano: number; bubbles: number; mic: number; bossCleared: boolean; lessonDone: boolean }>;
   namingConvention: NamingConvention;
   colorMode: ColorMode;
+  arcadeInitialSeconds?: number;
   arcadeLeaderboard?: ArcadeLeaderboardEntry[];
 }
 
@@ -70,6 +74,13 @@ export function encodeSyncCode(state: SyncableProgress): string {
       data.lessonDone ? 1 : 0,
     ]),
   };
+
+  if (
+    typeof state.arcadeInitialSeconds === 'number' &&
+    state.arcadeInitialSeconds !== DEFAULT_ARCADE_INITIAL_SECONDS
+  ) {
+    payload.at = state.arcadeInitialSeconds;
+  }
 
   if (customEntries.length > 0) {
     payload.lb = customEntries;
@@ -141,12 +152,21 @@ export function decodeSyncCode(code: string): SyncableProgress | null {
       arcadeLeaderboard = board;
     }
 
+    const arcadeInitialSeconds =
+      typeof parsed.at === 'number'
+        ? Math.min(
+            MAX_ARCADE_INITIAL_SECONDS,
+            Math.max(MIN_ARCADE_INITIAL_SECONDS, Math.round(parsed.at))
+          )
+        : undefined;
+
     return {
       unlockedWorld: Math.min(8, Math.max(1, parsed.u)),
       points: Math.max(0, parsed.p),
       worldStars,
       namingConvention,
       colorMode,
+      arcadeInitialSeconds,
       arcadeLeaderboard,
     };
   } catch {
